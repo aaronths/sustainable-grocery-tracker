@@ -46,6 +46,10 @@ export interface LineItem {
   quantity: number;
   massKg: number;
   kgCo2e: number;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
   confidence: number;
 }
 
@@ -70,6 +74,11 @@ export interface Category {
   name: string;
   group: CategoryGroup;
   kgCo2ePerKg: number;
+  kcalPerKg: number;
+  proteinGPerKg: number;
+  carbsGPerKg: number;
+  fatGPerKg: number;
+  typicalMassKg: number;
 }
 
 export interface Swap {
@@ -79,6 +88,11 @@ export interface Swap {
   context: string;
   savingKg: number;
   committed: boolean;
+}
+
+export interface SwapsResponse {
+  hero: Swap | null;
+  ideas: Swap[];
 }
 
 export interface Challenge {
@@ -157,6 +171,23 @@ export interface CategoryStat {
   avgKgCo2e: number;
 }
 
+export interface MacroGroupStat {
+  group: CategoryGroup;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface MacroStatsResponse {
+  weekId: string;
+  totalKcal: number;
+  totalProteinG: number;
+  totalCarbsG: number;
+  totalFatG: number;
+  byGroup: MacroGroupStat[];
+}
+
 export interface OffsetHistoryResponse {
   offsets: Offset[];
   totalKgOffset: number;
@@ -168,4 +199,19 @@ export interface CloseWeekResponse {
   streak: StreakState;
   newLow: boolean;
   outcome: WeekOutcome;
+}
+
+export type DietFlag = "low-fat" | "low-carb" | "high-protein" | "low-calorie";
+
+export interface HealthRecommendation {
+  dietFlag: DietFlag;
+  fromName: string;
+  toName: string;
+  context: string;
+}
+
+export interface HealthRecommendationsResponse {
+  dietFlags: DietFlag[];
+  allergyAlerts: string[];
+  recommendations: HealthRecommendation[];
 }

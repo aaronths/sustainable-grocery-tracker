@@ -5,13 +5,19 @@ type BigNumberProps = {
   value: number;
   decimals?: number;
   duration?: number;
+  tone?: "ink" | "mist";
+};
+
+const TONE_CLASS: Record<NonNullable<BigNumberProps["tone"]>, string> = {
+  ink: "text-ink",
+  mist: "text-mist",
 };
 
 function easeOutCubic(t: number): number {
   return 1 - (1 - t) ** 3;
 }
 
-export function BigNumber({ value, decimals = 1, duration = 900 }: BigNumberProps) {
+export function BigNumber({ value, decimals = 1, duration = 900, tone = "ink" }: BigNumberProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const displayRef = useRef(0);
   const frameRef = useRef<number | null>(null);
@@ -42,7 +48,7 @@ export function BigNumber({ value, decimals = 1, duration = 900 }: BigNumberProp
   }, [value]);
 
   return (
-    <Text className="font-display text-ink" style={{ fontSize: 88, lineHeight: 92 }}>
+    <Text className={`font-display ${TONE_CLASS[tone]}`} style={{ fontSize: 88, lineHeight: 92 }}>
       {displayValue.toFixed(decimals)}
     </Text>
   );

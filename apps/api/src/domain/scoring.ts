@@ -13,6 +13,9 @@ export const DEFAULT_OFFSET_PRICE_PER_TONNE_CENTS = Number(
 
 export const OFFSET_QUOTE_TTL_MS = 15 * 60 * 1000;
 
+/** Below this, a parsed line item's own estimate is treated as unreliable. */
+export const LOW_CONFIDENCE_THRESHOLD = 0.7;
+
 export const WEEK_TIMEZONE = "America/Detroit";
 
 export function round1(value: number): number {
@@ -137,25 +140,29 @@ export function closeWeek(input: CloseWeekInput): CloseWeekResult {
 }
 
 export interface OffsetQuoteCalc {
-  excessKg: number;
+  kg: number;
   costCents: number;
   feeCents: number;
   totalCents: number;
 }
 
-/** Returns null when the week is not over its limit (caller maps to 400 NOT_OVER_LIMIT). */
+/**
+ * Prices offsetting the week's entire footprint (not just the portion over
+ * the limit) — fully neutralizes the week rather than just covering the
+ * overage. Still gated on being over the limit (caller maps a null to 400
+ * NOT_OVER_LIMIT): a week within its limit has nothing to offset.
+ */
 export function computeOffsetQuote(
   totalKg: number,
   limitKg: number,
   pricePerTonneCents: number = DEFAULT_OFFSET_PRICE_PER_TONNE_CENTS,
 ): OffsetQuoteCalc | null {
-  const excessKg = totalKg - limitKg;
-  if (excessKg <= 0) return null;
+  if (totalKg <= limitKg) return null;
 
-  const costCents = Math.round((excessKg / 1000) * pricePerTonneCents);
+  const costCents = Math.round((totalKg / 1000) * pricePerTonneCents);
   const feeCents = Math.round(costCents * 0.05);
   return {
-    excessKg: round1(excessKg),
+    kg: round1(totalKg),
     costCents,
     feeCents,
     totalCents: costCents + feeCents,

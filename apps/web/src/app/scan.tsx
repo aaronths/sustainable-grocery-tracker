@@ -1,9 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
-import { AlertCircle, ArrowLeft, Camera, Check, Image as ImageIcon } from "lucide-react-native";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { Image } from "expo-image";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Camera,
+  Check,
+  Image as ImageIcon,
+  Receipt as ReceiptIcon,
+  TriangleAlert,
+} from "lucide-react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { Easing, FadeIn } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
+
+import ecoReceiptIcon from "@/assets/Eco_Receipt_Vine_Icon_Green.png";
 
 import { getCategories } from "@/api/resources";
 import type { Category, LineItem, Receipt } from "@/api/types";
@@ -47,22 +72,35 @@ export default function ScanScreen() {
         </View>
 
         {flow.phase === "pick" ? (
-          <PickView onTakePhoto={flow.takePhoto} onPickLibrary={flow.pickFromLibrary} />
+          <PickView
+            onTakePhoto={flow.takePhoto}
+            onPickLibrary={flow.pickFromLibrary}
+          />
         ) : null}
 
         {flow.phase === "uploading" || flow.phase === "processing" ? (
-          <ProcessingView label={flow.phase === "uploading" ? "Uploading…" : "Reading your receipt…"} />
+          <ProcessingView
+            label={
+              flow.phase === "uploading"
+                ? "Uploading…"
+                : "Reading your receipt…"
+            }
+          />
         ) : null}
 
-        {flow.phase === "error" ? <ErrorView message={flow.error} onRetry={flow.retry} /> : null}
+        {flow.phase === "error" ? (
+          <ErrorView message={flow.error} onRetry={flow.retry} />
+        ) : null}
 
-        {(flow.phase === "review" || flow.phase === "confirming") && flow.receipt ? (
+        {(flow.phase === "review" || flow.phase === "confirming") &&
+        flow.receipt ? (
           <ReviewView
             receipt={flow.receipt}
             confirming={flow.phase === "confirming"}
             confirmError={flow.confirmError}
             categoryLabel={categoryLabel}
             onCorrect={(itemId) => setPickerItemId(itemId)}
+            onUpdateMass={flow.updateItemMass}
             onConfirm={flow.confirm}
           />
         ) : null}
@@ -80,15 +118,28 @@ export default function ScanScreen() {
   );
 }
 
-function PickView({ onTakePhoto, onPickLibrary }: { onTakePhoto: () => void; onPickLibrary: () => void }) {
+function PickView({
+  onTakePhoto,
+  onPickLibrary,
+}: {
+  onTakePhoto: () => void;
+  onPickLibrary: () => void;
+}) {
   return (
     <View className="flex-1 items-center justify-center gap-4 px-6">
       <Animated.View entering={revealEntrance(0)}>
+        <Image
+          source={ecoReceiptIcon}
+          contentFit="contain"
+          style={{ width: 300, height: 500 }}
+        />
+      </Animated.View>
+      <Animated.View entering={revealEntrance(1)}>
         <Text className="text-center font-body text-base text-muted">
           Take a photo of a receipt, or choose one from your library.
         </Text>
       </Animated.View>
-      <Animated.View entering={revealEntrance(1)} className="w-full">
+      <Animated.View entering={revealEntrance(2)} className="w-full">
         <Pressable
           onPress={onTakePhoto}
           className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-btn bg-moss px-5 py-3"
@@ -97,13 +148,15 @@ function PickView({ onTakePhoto, onPickLibrary }: { onTakePhoto: () => void; onP
           <Text className="font-body-medium text-surface">Take photo</Text>
         </Pressable>
       </Animated.View>
-      <Animated.View entering={revealEntrance(2)} className="w-full">
+      <Animated.View entering={revealEntrance(3)} className="w-full">
         <Pressable
           onPress={onPickLibrary}
           className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-btn border border-moss px-5 py-3"
         >
           <ImageIcon size={18} color={colors.moss} />
-          <Text className="font-body-medium text-moss">Choose from library</Text>
+          <Text className="font-body-medium text-moss">
+            Choose from library
+          </Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -113,18 +166,49 @@ function PickView({ onTakePhoto, onPickLibrary }: { onTakePhoto: () => void; onP
 function ProcessingView({ label }: { label: string }) {
   return (
     <View className="flex-1 items-center justify-center gap-4 px-6">
-      <ActivityIndicator color={colors.moss} />
+      <PulsingReceiptIcon />
       <Text className="font-body text-base text-muted">{label}</Text>
     </View>
   );
 }
 
-function ErrorView({ message, onRetry }: { message: string | null; onRetry: () => void }) {
+function PulsingReceiptIcon() {
+  const opacity = useSharedValue(0.2);
+
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(0.55, { duration: 1100, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [opacity]);
+
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <Animated.View style={style}>
+      <ReceiptIcon size={48} color={colors.moss} />
+    </Animated.View>
+  );
+}
+
+function ErrorView({
+  message,
+  onRetry,
+}: {
+  message: string | null;
+  onRetry: () => void;
+}) {
   return (
     <View className="flex-1 items-center justify-center gap-4 px-6">
       <AlertCircle size={28} color={colors.ember} />
-      <Text className="text-center font-body text-base text-muted">{message ?? "Something went wrong."}</Text>
-      <Pressable onPress={onRetry} className="min-h-[44px] items-center justify-center rounded-btn bg-moss px-5 py-3">
+      <Text className="text-center font-body text-base text-muted">
+        {message ?? "Something went wrong."}
+      </Text>
+      <Pressable
+        onPress={onRetry}
+        className="min-h-[44px] items-center justify-center rounded-btn bg-moss px-5 py-3"
+      >
         <Text className="font-body-medium text-surface">Try again</Text>
       </Pressable>
     </View>
@@ -137,6 +221,7 @@ function ReviewView({
   confirmError,
   categoryLabel,
   onCorrect,
+  onUpdateMass,
   onConfirm,
 }: {
   receipt: Receipt;
@@ -144,19 +229,38 @@ function ReviewView({
   confirmError: string | null;
   categoryLabel: (categoryId: string) => string;
   onCorrect: (itemId: string) => void;
+  onUpdateMass: (itemId: string, massKg: number) => void;
   onConfirm: () => void;
 }) {
-  const total = Math.round(receipt.items.reduce((sum, item) => sum + item.kgCo2e, 0) * 10) / 10;
+  const total =
+    Math.round(receipt.items.reduce((sum, item) => sum + item.kgCo2e, 0) * 10) /
+    10;
 
   return (
     <View className="flex-1">
-      <ScrollView contentContainerClassName="gap-3 px-5 pb-4" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerClassName="gap-3 px-5 pb-4"
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View entering={revealEntrance(0)}>
-          <Text className="font-body text-sm text-muted">{receipt.store}</Text>
+          <Text className="font-bold text-xl pb-5">Review Results</Text>
+          <View className="flex-row justify-between">
+            <Text className="font-body text-sm text-muted">
+              {receipt.store}
+            </Text>
+            <Text className="font-body text-sm text-muted">
+              Estimated Emissions
+            </Text>
+          </View>
         </Animated.View>
         {receipt.items.map((item, i) => (
           <Animated.View key={item.id} entering={revealEntrance(i + 1)}>
-            <LineItemRow item={item} categoryLabel={categoryLabel} onCorrect={() => onCorrect(item.id)} />
+            <LineItemRow
+              item={item}
+              categoryLabel={categoryLabel}
+              onCorrect={() => onCorrect(item.id)}
+              onUpdateMass={(massKg) => onUpdateMass(item.id, massKg)}
+            />
           </Animated.View>
         ))}
         <Animated.View
@@ -169,7 +273,11 @@ function ReviewView({
       </ScrollView>
 
       <View className="px-5 pb-2 pt-3">
-        {confirmError ? <Text className="mb-2 text-center font-body text-sm text-ember">{confirmError}</Text> : null}
+        {confirmError ? (
+          <Text className="mb-2 text-center font-body text-sm text-ember">
+            {confirmError}
+          </Text>
+        ) : null}
         <Pressable
           onPress={onConfirm}
           disabled={confirming}
@@ -181,7 +289,9 @@ function ReviewView({
           ) : (
             <>
               <Check size={18} color={colors.surface} />
-              <Text className="font-body-medium text-surface">Confirm and add to this week</Text>
+              <Text className="font-body-medium text-surface">
+                Confirm and add to this week
+              </Text>
             </>
           )}
         </Pressable>
@@ -194,10 +304,12 @@ function LineItemRow({
   item,
   categoryLabel,
   onCorrect,
+  onUpdateMass,
 }: {
   item: LineItem;
   categoryLabel: (categoryId: string) => string;
   onCorrect: () => void;
+  onUpdateMass: (massKg: number) => void;
 }) {
   const lowConfidence = item.confidence < LOW_CONFIDENCE_THRESHOLD;
 
@@ -208,16 +320,76 @@ function LineItemRow({
         <Text className="font-body-medium text-ink">{item.kgCo2e} kg</Text>
       </View>
       <View className="flex-row items-center justify-between">
-        <Text className="font-body text-sm text-muted">{categoryLabel(item.categoryId)}</Text>
+        <Text className="font-body text-sm text-muted">
+          {categoryLabel(item.categoryId)}
+        </Text>
         {lowConfidence ? (
           <Pressable
             onPress={onCorrect}
             className="min-h-[32px] items-center justify-center rounded-full bg-ember/15 px-3 py-1.5"
           >
-            <Text className="font-body-medium text-sm text-ember">Not right? Fix category</Text>
+            <Text className="font-body-medium text-sm text-ember">
+              Not right? Fix category
+            </Text>
           </Pressable>
         ) : null}
       </View>
+      <View className="flex-row items-center justify-between">
+        <WeightInput massKg={item.massKg} onSubmit={onUpdateMass} />
+        {lowConfidence ? (
+          <View className="flex-row items-center gap-1">
+            <TriangleAlert size={12} color={colors.ember} />
+            <Text className="font-body-medium text-xs text-ember">
+              Review item weight
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function WeightInput({
+  massKg,
+  onSubmit,
+}: {
+  massKg: number;
+  onSubmit: (massKg: number) => void;
+}) {
+  const [text, setText] = useState(String(massKg));
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(massKg));
+  }, [massKg]);
+
+  const commit = () => {
+    const parsed = Number(text);
+    if (Number.isFinite(parsed) && parsed > 0 && parsed !== massKg) {
+      onSubmit(parsed);
+    } else {
+      setText(String(massKg));
+    }
+  };
+
+  return (
+    <View className="flex-row items-center gap-1.5">
+      <Text className="font-body text-sm text-muted">Weight</Text>
+      <TextInput
+        value={text}
+        onChangeText={setText}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          commit();
+        }}
+        onSubmitEditing={commit}
+        keyboardType="decimal-pad"
+        className="min-w-[48px] rounded-full bg-mist px-3 py-1 text-center font-body-medium text-sm text-ink"
+      />
+      <Text className="font-body text-sm text-muted">kg</Text>
     </View>
   );
 }

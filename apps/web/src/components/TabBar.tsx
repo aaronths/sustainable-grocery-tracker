@@ -1,7 +1,7 @@
 import type { ComponentProps, ComponentType } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Tabs } from "expo-router";
-import { ArrowLeftRight, BarChart3, Leaf, Trophy, User } from "lucide-react-native";
+import { BarChart3, Leaf, Lightbulb, Trophy, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/lib/colors";
@@ -11,7 +11,7 @@ type TabBarProps = Parameters<TabBarRenderer>[0];
 
 const ICONS: Record<string, ComponentType<{ size: number; color: string }>> = {
   stats: BarChart3,
-  swaps: ArrowLeftRight,
+  insights: Lightbulb,
   index: Leaf,
   leagues: Trophy,
   profile: User,

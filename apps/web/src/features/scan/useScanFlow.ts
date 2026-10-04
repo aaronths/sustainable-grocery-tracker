@@ -129,6 +129,21 @@ export function useScanFlow(onConfirmed: () => void) {
     [receipt],
   );
 
+  const updateItemMass = useCallback(
+    async (itemId: string, massKg: number) => {
+      if (!receipt) return;
+      const previous = receipt;
+      try {
+        const updated = await patchReceiptItem(receipt.id, itemId, { massKg });
+        setReceipt(updated);
+      } catch (err) {
+        setReceipt(previous);
+        setConfirmError(describeError(err, "Couldn't update that item"));
+      }
+    },
+    [receipt],
+  );
+
   const confirm = useCallback(async () => {
     if (!receipt) return;
     setPhase("confirming");
@@ -150,5 +165,16 @@ export function useScanFlow(onConfirmed: () => void) {
     setPhase("pick");
   }, [stopPolling]);
 
-  return { phase, receipt, error, confirmError, pickFromLibrary, takePhoto, correctItem, confirm, retry };
+  return {
+    phase,
+    receipt,
+    error,
+    confirmError,
+    pickFromLibrary,
+    takePhoto,
+    correctItem,
+    updateItemMass,
+    confirm,
+    retry,
+  };
 }

@@ -25,7 +25,7 @@ router.post("/offsets/quote", (_req, res, next) => {
 
   const quote: OffsetQuote = {
     id: makeId("quote"),
-    kg: calc.excessKg,
+    kg: calc.kg,
     costCents: calc.costCents,
     feeCents: calc.feeCents,
     totalCents: calc.totalCents,

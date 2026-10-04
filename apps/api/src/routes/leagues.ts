@@ -5,12 +5,33 @@ import { badRequest, notFound } from "../lib/http-error";
 import { parseOrThrow } from "../lib/validate";
 import { makeId } from "../lib/ids";
 import { round1 } from "../domain/scoring";
-import type { League } from "../domain/types";
+import type { League, LeagueMember } from "../domain/types";
 
 const router = Router();
 
+function pctVsBaseline(totalKg: number, baselineKg: number): number {
+  return round1(((totalKg - baselineKg) / baselineKg) * 100);
+}
+
+/**
+ * Seeded members are static (no live account behind them), but "you" are
+ * live state — recompute your own streak/pctVsBaseline from the current
+ * open week on every read instead of trusting the value baked in at seed
+ * time, which otherwise goes stale the moment a receipt is scanned.
+ */
+function withLiveSelf(members: LeagueMember[]): LeagueMember[] {
+  const { user, streak } = getState();
+  const openWeek = getOpenWeek();
+  return members.map((m) =>
+    m.userId === user.id
+      ? { ...m, streak: streak.current, pctVsBaseline: pctVsBaseline(openWeek.totalKg, streak.baselineKg) }
+      : m,
+  );
+}
+
 router.get("/leagues", (_req, res) => {
-  res.json(getState().leagues);
+  const leagues = getState().leagues.map((l) => ({ ...l, members: withLiveSelf(l.members) }));
+  res.json(leagues);
 });
 
 router.get("/leagues/:id", (req, res, next) => {
@@ -18,14 +39,10 @@ router.get("/leagues/:id", (req, res, next) => {
   if (!league) return next(notFound(`League ${req.params.id} not found`));
   const sorted = {
     ...league,
-    members: league.members.slice().sort((a, b) => a.pctVsBaseline - b.pctVsBaseline),
+    members: withLiveSelf(league.members).sort((a, b) => a.pctVsBaseline - b.pctVsBaseline),
   };
   res.json(sorted);
 });
-
-function pctVsBaseline(totalKg: number, baselineKg: number): number {
-  return round1(((totalKg - baselineKg) / baselineKg) * 100);
-}
 
 const createSchema = z
   .object({

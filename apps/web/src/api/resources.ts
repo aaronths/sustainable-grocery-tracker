@@ -4,13 +4,15 @@ import type {
   CategoryStat,
   Challenge,
   DashboardResponse,
+  HealthRecommendationsResponse,
   League,
+  MacroStatsResponse,
   Offset,
   OffsetHistoryResponse,
   OffsetQuote,
   ProfileResponse,
   Receipt,
-  Swap,
+  SwapsResponse,
   Week,
 } from "./types";
 
@@ -23,9 +25,12 @@ export const getWeeks = (limit = 12): Promise<Week[]> => get(`/weeks?limit=${lim
 export const getCategoryStats = (weeks = 12): Promise<CategoryStat[]> =>
   get(`/stats/categories?weeks=${weeks}`);
 
-export const getSwaps = (): Promise<Swap[]> => get("/swaps");
+export const getMacroStats = (): Promise<MacroStatsResponse> => get("/stats/macros");
 
-export const commitSwap = (id: string): Promise<Swap> => post(`/swaps/${id}/commit`);
+export const getHealthRecommendations = (): Promise<HealthRecommendationsResponse> =>
+  get("/health/recommendations");
+
+export const getSwaps = (): Promise<SwapsResponse> => get("/swaps");
 
 export async function getCurrentChallenge(): Promise<Challenge | null> {
   try {
@@ -35,6 +40,9 @@ export async function getCurrentChallenge(): Promise<Challenge | null> {
     throw err;
   }
 }
+
+export const postChallengeProgress = (id: string, amount = 1): Promise<Challenge> =>
+  post(`/challenges/${id}/progress`, { amount });
 
 export const getLeagues = (): Promise<League[]> => get("/leagues");
 
@@ -56,7 +64,7 @@ export const uploadReceipt = (formData: FormData): Promise<{ id: string; status:
 export const patchReceiptItem = (
   receiptId: string,
   itemId: string,
-  body: { categoryId?: string; quantity?: number },
+  body: { categoryId?: string; quantity?: number; massKg?: number },
 ): Promise<Receipt> => patch(`/receipts/${receiptId}/items/${itemId}`, body);
 
 export const confirmReceipt = (id: string): Promise<DashboardResponse> =>

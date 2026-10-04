@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { getOpenWeek, getState, resetStore } from "../store";
 import { computeLimit, round1 } from "../domain/scoring";
+import { computeMacros } from "../domain/nutrition";
 import { parseOrThrow } from "../lib/validate";
 import { makeId } from "../lib/ids";
 import { buildDashboard } from "../lib/dashboard";
@@ -24,6 +25,7 @@ router.post("/dev/simulate", (req, res) => {
   };
   const targetTotal = targets[body.status];
   const fillerCategory = state.categories[0];
+  const massKg = round1(targetTotal / fillerCategory.kgCo2ePerKg);
 
   state.receipts = state.receipts.filter((r) => r.weekId !== openWeek.id);
   state.receipts.push({
@@ -39,8 +41,9 @@ router.post("/dev/simulate", (req, res) => {
         name: "Simulated groceries",
         categoryId: fillerCategory.id,
         quantity: 1,
-        massKg: round1(targetTotal / fillerCategory.kgCo2ePerKg),
+        massKg,
         kgCo2e: targetTotal,
+        ...computeMacros(massKg, fillerCategory),
         confidence: 1,
       },
     ],

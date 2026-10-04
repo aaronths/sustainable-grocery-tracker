@@ -10,8 +10,25 @@ vi.mock("../src/stubs/parser", async () => {
   const canned = await vi.importActual<typeof import("../src/stubs/cannedReceipt")>(
     "../src/stubs/cannedReceipt",
   );
-  return { parseReceipt: async () => canned.cannedReceiptItems() };
+  return { parseReceipt: async () => ({ store: "Test Market", items: canned.cannedReceiptItems() }) };
 });
+
+// Keeps GET /api/health/recommendations network-free and deterministic: a
+// canned Finchnode fixture, and a Claude classification call that always
+// succeeds with a fixed diet flag (classification quality itself is covered
+// by tests/health.test.ts with a mocked Anthropic client).
+vi.mock("../src/stubs/finchnode", async () => {
+  const actual = await vi.importActual<typeof import("../src/stubs/finchnode")>(
+    "../src/stubs/finchnode",
+  );
+  return { ...actual, fetchPatientRecords: async () => actual.cannedPatientRecords() };
+});
+
+vi.mock("../src/lib/anthropicClient", () => ({
+  getAnthropicClient: () => ({
+    messages: { parse: async () => ({ parsed_output: { dietFlags: ["low-fat"] } }) },
+  }),
+}));
 
 beforeEach(() => {
   resetStore();
@@ -116,6 +133,7 @@ describe("receipts flow", () => {
     const readyRes = await request(app).get(`/api/receipts/${uploadRes.body.id}`);
     expect(readyRes.body.status).toBe("ready");
     expect(readyRes.body.items.length).toBeGreaterThan(0);
+    expect(readyRes.body.store).toBe("Test Market"); // detected store replaces the "Unknown store" placeholder
 
     const lowConfidenceItem = readyRes.body.items.find((i: { confidence: number }) => i.confidence < 0.7);
     expect(lowConfidenceItem).toBeTruthy();
@@ -142,6 +160,30 @@ describe("receipts flow", () => {
     const res = await request(app).get("/api/receipts/does-not-exist");
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe("NOT_FOUND");
+  });
+});
+
+describe("GET /api/stats/macros", () => {
+  it("sums macros across the open week's confirmed receipts by category group", async () => {
+    const res = await request(app).get("/api/stats/macros");
+    expect(res.status).toBe(200);
+    expect(res.body.byGroup).toHaveLength(5);
+    expect(res.body.totalKcal).toBeGreaterThan(0);
+    const sumOfGroups = res.body.byGroup.reduce(
+      (sum: number, g: { kcal: number }) => sum + g.kcal,
+      0,
+    );
+    expect(res.body.totalKcal).toBe(sumOfGroups);
+  });
+});
+
+describe("GET /api/health/recommendations", () => {
+  it("returns diet flags, allergy alerts, and a swap recommendation from this week's groceries", async () => {
+    const res = await request(app).get("/api/health/recommendations");
+    expect(res.status).toBe(200);
+    expect(res.body.dietFlags).toEqual(["low-fat"]);
+    expect(res.body.allergyAlerts).toEqual(["Peanut"]);
+    expect(Array.isArray(res.body.recommendations)).toBe(true);
   });
 });
 

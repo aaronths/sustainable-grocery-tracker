@@ -8,7 +8,6 @@ type OffsetSheetProps = {
   visible: boolean;
   onClose: () => void;
   streak: number;
-  limitKg: number;
   quote: OffsetQuote | null;
   quoteError: string | null;
   confirming: boolean;
@@ -24,7 +23,6 @@ export function OffsetSheet({
   visible,
   onClose,
   streak,
-  limitKg,
   quote,
   quoteError,
   confirming,
@@ -38,8 +36,7 @@ export function OffsetSheet({
       {quote ? (
         <>
           <Text className="mt-2 font-body text-base text-muted">
-            This week is {quote.kg} kg over your {limitKg} kg limit. Offset the difference and
-            your streak carries on.
+            Offset this week's {quote.kg} kg of emissions in full and your streak carries on.
           </Text>
 
           <View className="mt-4 gap-3 rounded-card border border-sage/40 px-4 py-4">
@@ -94,7 +91,7 @@ export function OffsetSheet({
         <Text className="font-body-medium text-ink">Let the streak end</Text>
       </Pressable>
       <Text className="text-center font-body text-xs text-muted">
-        Offsets don't cancel this week's emissions. Next week's swaps do more.
+        This fully neutralizes this week's emissions. Next week starts fresh.
       </Text>
     </Sheet>
   );

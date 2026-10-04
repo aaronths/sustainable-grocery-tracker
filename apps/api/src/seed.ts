@@ -2,11 +2,13 @@ import { makeId } from "./lib/ids";
 import {
   closeWeek,
   computeLimit,
+  computeOffsetQuote,
   computeStatus,
   getWeekWindow,
   round1,
   shiftWeekWindow,
 } from "./domain/scoring";
+import { computeMacros } from "./domain/nutrition";
 import type {
   Category,
   Challenge,
@@ -37,10 +39,14 @@ export interface StoreState {
 
 const CATEGORIES = categoriesData as Category[];
 
-function factorOf(categoryId: string): number {
+function categoryOf(categoryId: string): Category {
   const category = CATEGORIES.find((c) => c.id === categoryId);
   if (!category) throw new Error(`Unknown seed category: ${categoryId}`);
-  return category.kgCo2ePerKg;
+  return category;
+}
+
+function factorOf(categoryId: string): number {
+  return categoryOf(categoryId).kgCo2ePerKg;
 }
 
 function makeLineItem(opts: {
@@ -52,6 +58,7 @@ function makeLineItem(opts: {
   quantity?: number;
 }): LineItem {
   const massKg = round1(opts.massKg);
+  const category = categoryOf(opts.categoryId);
   return {
     id: makeId("item"),
     rawText: opts.rawText,
@@ -59,7 +66,8 @@ function makeLineItem(opts: {
     categoryId: opts.categoryId,
     quantity: opts.quantity ?? 1,
     massKg,
-    kgCo2e: round1(massKg * factorOf(opts.categoryId)),
+    kgCo2e: round1(massKg * category.kgCo2ePerKg),
+    ...computeMacros(massKg, category),
     confidence: opts.confidence,
   };
 }
@@ -157,15 +165,13 @@ export function buildSeed(now: Date = new Date()): StoreState {
     weeks.push(week);
 
     if (result.outcome === "offset") {
-      const excessKg = round1(totalKg - result.limitKg);
-      const costCents = Math.round((excessKg / 1000) * 4000);
-      const feeCents = Math.round(costCents * 0.05);
+      const quote = computeOffsetQuote(totalKg, result.limitKg, 4000)!;
       offsets.push({
         id: makeId("offset"),
         quoteId: makeId("quote"),
         weekId: week.id,
-        kg: excessKg,
-        totalCents: costCents + feeCents,
+        kg: quote.kg,
+        totalCents: quote.totalCents,
         createdAt: `${week.endDate}T20:00:00.000Z`,
       });
     }
@@ -370,29 +376,29 @@ export function buildSeed(now: Date = new Date()): StoreState {
       members: [
         {
           userId: "u_friend_1",
-          name: "Priya N.",
-          initials: "PN",
+          name: "Nicolette L.",
+          initials: "NL",
           streak: 9,
           pctVsBaseline: -8.2,
         },
         {
           userId: "u_friend_2",
-          name: "Sam K.",
-          initials: "SK",
+          name: "Brandon W.",
+          initials: "BW",
           streak: 15,
           pctVsBaseline: -3.4,
         },
         {
           userId: "u_friend_3",
-          name: "Casey W.",
-          initials: "CW",
+          name: "Rebecca C.",
+          initials: "RC",
           streak: 7,
           pctVsBaseline: 0.0,
         },
         {
           userId: "u_friend_4",
-          name: "Morgan T.",
-          initials: "MT",
+          name: "Anthony L.",
+          initials: "AL",
           streak: 4,
           pctVsBaseline: 5.1,
         },

@@ -6,6 +6,7 @@ import { makeId } from "../lib/ids";
 import { badRequest, notFound } from "../lib/http-error";
 import { parseOrThrow } from "../lib/validate";
 import { round1 } from "../domain/scoring";
+import { computeMacros } from "../domain/nutrition";
 import { parseReceipt } from "../stubs/parser";
 import { buildDashboard } from "../lib/dashboard";
 import type { Receipt } from "../domain/types";
@@ -32,9 +33,10 @@ router.post("/receipts", upload.single("image"), (req, res, next) => {
   const mimeType = req.file.mimetype;
   setTimeout(() => {
     parseReceipt(imageBuffer, mimeType)
-      .then((items) => {
+      .then(({ store, items }) => {
         const current = findReceipt(receipt.id);
         if (!current || current.status !== "processing") return;
+        current.store = store;
         current.items = items;
         current.status = "ready";
       })
@@ -65,6 +67,7 @@ const patchItemSchema = z
   .object({
     categoryId: z.string().min(1).optional(),
     quantity: z.number().positive().optional(),
+    massKg: z.number().positive().optional(),
   })
   .strict();
 
@@ -87,9 +90,15 @@ router.patch("/receipts/:id/items/:itemId", (req, res, next) => {
     item.quantity = body.quantity;
     item.massKg = round1(unitMassKg * body.quantity);
   }
+  // A direct weight edit (e.g. correcting a low-confidence guess) overrides
+  // whatever quantity-based rescale happened above.
+  if (body.massKg !== undefined) {
+    item.massKg = round1(body.massKg);
+  }
 
   const category = state.categories.find((c) => c.id === item.categoryId)!;
   item.kgCo2e = round1(item.massKg * category.kgCo2ePerKg);
+  Object.assign(item, computeMacros(item.massKg, category));
   item.confidence = 1;
 
   if (receipt.status === "confirmed") recomputeOpenWeekTotal();

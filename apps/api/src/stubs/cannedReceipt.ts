@@ -1,14 +1,15 @@
 import { makeId } from "../lib/ids";
 import type { Category, LineItem } from "../domain/types";
 import { round1 } from "../domain/scoring";
+import { computeMacros } from "../domain/nutrition";
 import categoriesData from "../data/categories.json";
 
 const CATEGORIES = categoriesData as Category[];
 
-function factorOf(categoryId: string): number {
+function categoryOf(categoryId: string): Category {
   const category = CATEGORIES.find((c) => c.id === categoryId);
   if (!category) throw new Error(`Unknown canned category: ${categoryId}`);
-  return category.kgCo2ePerKg;
+  return category;
 }
 
 interface CannedItem {
@@ -32,14 +33,19 @@ const CANNED_ITEMS: CannedItem[] = [
  * error, rate limit, missing key) and as the test double in routes.test.ts.
  */
 export function cannedReceiptItems(): LineItem[] {
-  return CANNED_ITEMS.map((item) => ({
-    id: makeId("item"),
-    rawText: item.rawText,
-    name: item.name,
-    categoryId: item.categoryId,
-    quantity: item.quantity,
-    massKg: round1(item.massKg),
-    kgCo2e: round1(item.massKg * factorOf(item.categoryId)),
-    confidence: item.confidence,
-  }));
+  return CANNED_ITEMS.map((item) => {
+    const category = categoryOf(item.categoryId);
+    const massKg = round1(item.massKg);
+    return {
+      id: makeId("item"),
+      rawText: item.rawText,
+      name: item.name,
+      categoryId: item.categoryId,
+      quantity: item.quantity,
+      massKg,
+      kgCo2e: round1(massKg * category.kgCo2ePerKg),
+      ...computeMacros(massKg, category),
+      confidence: item.confidence,
+    };
+  });
 }

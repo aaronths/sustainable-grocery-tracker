@@ -100,19 +100,19 @@ describe("computeOffsetQuote", () => {
     expect(computeOffsetQuote(90, 100, 4000)).toBeNull();
   });
 
-  it("computes cost from the excess at the given price per tonne", () => {
-    const quote = computeOffsetQuote(131, 100, 4000); // 31kg excess
+  it("prices the week's entire footprint, not just the excess over the limit", () => {
+    const quote = computeOffsetQuote(131, 100, 4000); // 131kg total, 100kg limit
     expect(quote).not.toBeNull();
-    expect(quote!.excessKg).toBe(31);
-    expect(quote!.costCents).toBe(124); // 31/1000 * 4000
+    expect(quote!.kg).toBe(131);
+    expect(quote!.costCents).toBe(524); // 131/1000 * 4000
   });
 
   it("rounds the 5% fee using round-half-up", () => {
-    const quote = computeOffsetQuote(112.5, 100, 4000); // 12.5kg excess -> 50c cost
+    const quote = computeOffsetQuote(112.5, 100, 4000); // 112.5kg total -> 450c cost
     expect(quote).not.toBeNull();
-    expect(quote!.excessKg).toBe(12.5);
-    expect(quote!.costCents).toBe(50);
-    expect(quote!.feeCents).toBe(3); // round(50 * 0.05) = round(2.5) = 3
-    expect(quote!.totalCents).toBe(53);
+    expect(quote!.kg).toBe(112.5);
+    expect(quote!.costCents).toBe(450);
+    expect(quote!.feeCents).toBe(23); // round(450 * 0.05) = round(22.5) = 23
+    expect(quote!.totalCents).toBe(473);
   });
 });

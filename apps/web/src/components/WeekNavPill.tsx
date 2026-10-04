@@ -42,8 +42,8 @@ export function WeekNavPill({ label, sublabel, hasPrev, hasNext, onPrev, onNext 
         <ChevronLeft size={16} color={colors.ink} />
       </NavButton>
 
-      <View className="gap-0.5 rounded-card bg-surface/80 px-4 py-2.5">
-        <Text className="font-body-medium text-sm text-ink">{label}</Text>
+      <View className="gap-0.5 rounded-card bg-surface px-4 py-2.5">
+        <Text className="font-display-medium text-base text-ink">{label}</Text>
         <Text className="font-body text-xs text-muted">{sublabel}</Text>
       </View>
 

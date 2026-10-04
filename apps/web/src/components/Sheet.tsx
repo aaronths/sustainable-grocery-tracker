@@ -10,7 +10,7 @@ type SheetProps = {
 
 export function Sheet({ visible, onClose, children }: SheetProps) {
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable className="flex-1 bg-ink/40" onPress={onClose} />
       <SafeAreaView edges={["bottom"]} className="absolute bottom-0 w-full items-center">
         <View className="w-full max-w-[430px]">

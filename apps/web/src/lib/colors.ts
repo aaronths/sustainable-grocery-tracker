@@ -11,6 +11,9 @@ export const colors = {
   muted: "#46554B",
   ember: "#A84E17",
   smog: "#4A3D30",
+  amber: "#C99A2E",
+  orange: "#C2672B",
+  maroon: "#7A2320",
 } as const;
 
 export type ColorToken = keyof typeof colors;

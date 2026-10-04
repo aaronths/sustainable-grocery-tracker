@@ -22,6 +22,7 @@ import swapsRouter from "./routes/swaps";
 import challengesRouter from "./routes/challenges";
 import offsetsRouter from "./routes/offsets";
 import leaguesRouter from "./routes/leagues";
+import patientHealthRouter from "./routes/patientHealth";
 import devRouter from "./routes/dev";
 
 export const app = express();
@@ -41,6 +42,7 @@ api.use(swapsRouter);
 api.use(challengesRouter);
 api.use(offsetsRouter);
 api.use(leaguesRouter);
+api.use(patientHealthRouter);
 api.use(devRouter);
 
 app.use("/api", api);

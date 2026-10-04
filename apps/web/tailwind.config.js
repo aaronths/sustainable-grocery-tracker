@@ -14,6 +14,9 @@ module.exports = {
         muted: "#46554B",
         ember: "#A84E17",
         smog: "#4A3D30",
+        amber: "#C99A2E",
+        orange: "#C2672B",
+        maroon: "#7A2320",
       },
       fontFamily: {
         display: ["BricolageGrotesque_700Bold"],

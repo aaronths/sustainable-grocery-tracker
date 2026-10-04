@@ -1,8 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { Leaf, TriangleAlert } from "lucide-react-native";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 
 import type { WeekOutcome, WeekStatus } from "@/api/types";
 import { BigNumber } from "@/components/BigNumber";
@@ -17,6 +24,33 @@ import { WeekNavPill } from "@/components/WeekNavPill";
 import { colors } from "@/lib/colors";
 import { useHomeData } from "@/features/home/useHomeData";
 import { useWeekHistory } from "@/features/home/useWeekHistory";
+
+// A streak the user is about to lose shouldn't be a quiet badge — flash it
+// so it reads as urgent at a glance, the same way the StatusCard's "Over
+// limit" button already owns this moment, just louder.
+function AtRiskBadge() {
+  const flash = useSharedValue(1);
+
+  useEffect(() => {
+    flash.value = withRepeat(
+      withTiming(0.35, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+  }, [flash]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: flash.value }));
+
+  return (
+    <Animated.View
+      style={animatedStyle}
+      className="flex-row items-center gap-1 rounded-full bg-ember px-3 py-1"
+    >
+      <TriangleAlert size={12} color={colors.surface} />
+      <Text className="font-body-medium text-xs text-surface">At risk</Text>
+    </Animated.View>
+  );
+}
 
 function formatWeekOf(startDate: string): string {
   return new Date(`${startDate}T00:00:00`).toLocaleDateString("en-US", {
@@ -141,12 +175,7 @@ function HomeContent({
                 <Leaf size={16} color={colors.leaf} />
                 <Text className="font-display-medium text-base text-ink">{dashboard.streak}-week streak</Text>
               </View>
-              {dashboard.status === "over" && !offsetPurchased ? (
-                <View className="flex-row items-center gap-1 rounded-full bg-ember/10 px-3 py-1">
-                  <TriangleAlert size={12} color={colors.ember} />
-                  <Text className="font-body-medium text-xs text-ember">At risk</Text>
-                </View>
-              ) : null}
+              {dashboard.status === "over" && !offsetPurchased ? <AtRiskBadge /> : null}
             </View>
           ) : null}
         </View>

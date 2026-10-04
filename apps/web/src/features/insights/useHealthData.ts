@@ -7,6 +7,7 @@ import type { DietFlag, HealthRecommendation, MacroStatsResponse } from "@/api/t
 
 export type HealthData = {
   macros: MacroStatsResponse;
+  linked: boolean;
   dietFlags: DietFlag[];
   allergyAlerts: string[];
   recommendations: HealthRecommendation[];
@@ -26,6 +27,7 @@ export function useHealthData() {
       const [macros, health] = await Promise.all([getMacroStats(), getHealthRecommendations()]);
       setData({
         macros,
+        linked: health.linked,
         dietFlags: health.dietFlags,
         allergyAlerts: health.allergyAlerts,
         recommendations: health.recommendations,

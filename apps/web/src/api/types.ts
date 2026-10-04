@@ -211,7 +211,13 @@ export interface HealthRecommendation {
 }
 
 export interface HealthRecommendationsResponse {
+  linked: boolean;
   dietFlags: DietFlag[];
   allergyAlerts: string[];
   recommendations: HealthRecommendation[];
+}
+
+export interface HealthLinkResponse {
+  linked: boolean;
+  patientId: string | null;
 }

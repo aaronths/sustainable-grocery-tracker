@@ -21,7 +21,11 @@ vi.mock("../src/stubs/finchnode", async () => {
   const actual = await vi.importActual<typeof import("../src/stubs/finchnode")>(
     "../src/stubs/finchnode",
   );
-  return { ...actual, fetchPatientRecords: async () => actual.cannedPatientRecords() };
+  return {
+    ...actual,
+    fetchPatientRecords: async () => actual.cannedPatientRecords(),
+    createConnectSession: async () => ({ status: "complete" as const, patientId: "patient-demo-001" }),
+  };
 });
 
 vi.mock("../src/lib/anthropicClient", () => ({
@@ -177,10 +181,21 @@ describe("GET /api/stats/macros", () => {
   });
 });
 
-describe("GET /api/health/recommendations", () => {
-  it("returns diet flags, allergy alerts, and a swap recommendation from this week's groceries", async () => {
+describe("health records linking", () => {
+  it("GET /api/health/recommendations reports unlinked with no data before linking", async () => {
     const res = await request(app).get("/api/health/recommendations");
     expect(res.status).toBe(200);
+    expect(res.body).toEqual({ linked: false, dietFlags: [], allergyAlerts: [], recommendations: [] });
+  });
+
+  it("POST /api/health/link then GET /api/health/recommendations returns diet flags, allergy alerts, and a swap recommendation", async () => {
+    const linkRes = await request(app).post("/api/health/link");
+    expect(linkRes.status).toBe(200);
+    expect(linkRes.body).toEqual({ linked: true, patientId: "patient-demo-001" });
+
+    const res = await request(app).get("/api/health/recommendations");
+    expect(res.status).toBe(200);
+    expect(res.body.linked).toBe(true);
     expect(res.body.dietFlags).toEqual(["low-fat"]);
     expect(res.body.allergyAlerts).toEqual(["Peanut"]);
     expect(Array.isArray(res.body.recommendations)).toBe(true);

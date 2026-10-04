@@ -4,6 +4,7 @@ import type {
   CategoryStat,
   Challenge,
   DashboardResponse,
+  HealthLinkResponse,
   HealthRecommendationsResponse,
   League,
   MacroStatsResponse,
@@ -29,6 +30,8 @@ export const getMacroStats = (): Promise<MacroStatsResponse> => get("/stats/macr
 
 export const getHealthRecommendations = (): Promise<HealthRecommendationsResponse> =>
   get("/health/recommendations");
+
+export const postHealthLink = (): Promise<HealthLinkResponse> => post("/health/link");
 
 export const getSwaps = (): Promise<SwapsResponse> => get("/swaps");
 

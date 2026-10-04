@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ApiError } from "@/api/client";
-import { postChallengeProgress } from "@/api/resources";
+import { postChallengeProgress, postHealthLink } from "@/api/resources";
 import type { Swap } from "@/api/types";
 import { ChallengeProgressSheet } from "@/components/ChallengeProgressSheet";
 import { HealthRecommendations } from "@/components/HealthRecommendations";
@@ -13,6 +13,7 @@ import { SegmentedControl } from "@/components/SegmentedControl";
 import { Tile } from "@/components/Tile";
 import { useActionsData } from "@/features/insights/useActionsData";
 import { useHealthData } from "@/features/insights/useHealthData";
+import { colors } from "@/lib/colors";
 
 type InsightsView = "actions" | "health";
 
@@ -23,20 +24,57 @@ const VIEW_OPTIONS: { value: InsightsView; label: string }[] = [
 
 export default function InsightsScreen() {
   const [view, setView] = useState<InsightsView>("actions");
+  const health = useHealthData();
 
   return (
     <View className="flex-1 bg-mist">
       <SafeAreaView edges={["top"]} className="flex-1">
-        <View className="gap-5 px-5 pb-2 pt-4">
-          <Text className="font-display text-2xl text-ink">Insights</Text>
-          <View className="w-44">
-            <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
+        <View className="flex-row items-start justify-between px-5 pb-2 pt-4">
+          <View className="gap-5">
+            <Text className="font-display text-2xl text-ink">Insights</Text>
+            <View className="w-44">
+              <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
+            </View>
           </View>
+
+          <HealthLinkButton linked={health.data?.linked ?? false} onLinked={health.refetch} />
         </View>
 
-        {view === "actions" ? <ActionsContent /> : <HealthContent />}
+        {view === "actions" ? <ActionsContent /> : <HealthContent health={health} />}
       </SafeAreaView>
     </View>
+  );
+}
+
+function HealthLinkButton({ linked, onLinked }: { linked: boolean; onLinked: () => void }) {
+  const [linking, setLinking] = useState(false);
+
+  const link = async () => {
+    setLinking(true);
+    try {
+      await postHealthLink();
+      onLinked();
+    } catch {
+      // Best-effort — the button just stays "Link Health Records" to retry.
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  return (
+    <Pressable
+      onPress={link}
+      disabled={linking || linked}
+      className={`items-end gap-0.5 ${linked ? "" : "active:opacity-70"}`}
+    >
+      <View className={`flex-row items-center gap-1.5 rounded-full px-3 py-1.5 ${linked ? "bg-sage/30" : "bg-moss"}`}>
+        {linking ? <ActivityIndicator size="small" color={linked ? colors.ink : colors.surface} /> : null}
+        <Text className={`font-body-medium text-xs ${linked ? "text-ink" : "text-surface"}`}>
+          {linking ? "Linking…" : linked ? "Health Records Linked" : "Link Health Records"}
+        </Text>
+      </View>
+      {linked ? <Text className="font-body text-[10px] text-muted">Powered by Finchnode</Text> : null}
+    </Pressable>
   );
 }
 
@@ -183,9 +221,7 @@ function ChallengeCard({
   );
 }
 
-function HealthContent() {
-  const health = useHealthData();
-
+function HealthContent({ health }: { health: ReturnType<typeof useHealthData> }) {
   return (
     <ScreenState
       loading={health.status === "loading"}

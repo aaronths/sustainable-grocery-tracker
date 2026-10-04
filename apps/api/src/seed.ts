@@ -35,6 +35,8 @@ export interface StoreState {
   offsetQuotes: Map<string, OffsetQuote>;
   offsets: Offset[];
   leagues: League[];
+  /** Set once the user links their Finchnode sandbox patient record. */
+  linkedPatientId: string | null;
 }
 
 const CATEGORIES = categoriesData as Category[];
@@ -424,5 +426,6 @@ export function buildSeed(now: Date = new Date()): StoreState {
     offsetQuotes: new Map(),
     offsets,
     leagues,
+    linkedPatientId: null,
   };
 }

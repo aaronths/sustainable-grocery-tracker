@@ -6,6 +6,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { getAnthropicClient } from "../lib/anthropicClient";
 import type { PatientRecords } from "../stubs/finchnode";
 import type { Category, DietFlag, HealthRecommendation, LineItem } from "./types";
+import { round1 } from "./scoring";
 
 const DIET_FLAG_VALUES = ["low-fat", "low-carb", "high-protein", "low-calorie"] as const;
 
@@ -90,14 +91,13 @@ export async function classifyHealthProfile(records: PatientRecords): Promise<He
 interface FlagMetric {
   categoryField: "fatGPerKg" | "carbsGPerKg" | "kcalPerKg" | "proteinGPerKg";
   direction: "minimize" | "maximize";
-  label: string;
 }
 
 const FLAG_METRICS: Record<DietFlag, FlagMetric> = {
-  "low-fat": { categoryField: "fatGPerKg", direction: "minimize", label: "fat" },
-  "low-carb": { categoryField: "carbsGPerKg", direction: "minimize", label: "carbs" },
-  "low-calorie": { categoryField: "kcalPerKg", direction: "minimize", label: "calories" },
-  "high-protein": { categoryField: "proteinGPerKg", direction: "maximize", label: "protein" },
+  "low-fat": { categoryField: "fatGPerKg", direction: "minimize" },
+  "low-carb": { categoryField: "carbsGPerKg", direction: "minimize" },
+  "low-calorie": { categoryField: "kcalPerKg", direction: "minimize" },
+  "high-protein": { categoryField: "proteinGPerKg", direction: "maximize" },
 };
 
 /**
@@ -150,7 +150,8 @@ export function computeHealthRecommendations(
       dietFlag: flag,
       fromName: best.item.name,
       toName: best.alt.name,
-      context: `Lower ${metric.label}, from this week's groceries`,
+      context: "From this week's groceries",
+      impactAmount: metric.categoryField === "kcalPerKg" ? Math.round(best.gain) : round1(best.gain),
     });
   }
 

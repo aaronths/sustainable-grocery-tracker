@@ -130,7 +130,8 @@ describe("computeHealthRecommendations", () => {
         dietFlag: "low-fat",
         fromName: "Ground beef",
         toName: "Chicken breast",
-        context: "Lower fat, from this week's groceries",
+        context: "From this week's groceries",
+        impactAmount: 82,
       },
     ]);
   });

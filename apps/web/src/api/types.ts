@@ -208,6 +208,7 @@ export interface HealthRecommendation {
   fromName: string;
   toName: string;
   context: string;
+  impactAmount: number;
 }
 
 export interface HealthRecommendationsResponse {

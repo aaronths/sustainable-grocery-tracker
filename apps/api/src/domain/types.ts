@@ -206,6 +206,9 @@ export interface HealthRecommendation {
   fromName: string;
   toName: string;
   context: string;
+  /** How much of the flag's metric this swap would have saved/gained this
+   * week (grams for fat/carbs/protein, kcal for calories). */
+  impactAmount: number;
 }
 
 export interface HealthRecommendationsResponse {

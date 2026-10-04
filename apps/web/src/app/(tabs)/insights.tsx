@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ApiError } from "@/api/client";
@@ -33,20 +39,37 @@ export default function InsightsScreen() {
           <View className="gap-5">
             <Text className="font-display text-2xl text-ink">Insights</Text>
             <View className="w-44">
-              <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
+              <SegmentedControl
+                options={VIEW_OPTIONS}
+                value={view}
+                onChange={setView}
+              />
             </View>
           </View>
 
-          <HealthLinkButton linked={health.data?.linked ?? false} onLinked={health.refetch} />
+          <HealthLinkButton
+            linked={health.data?.linked ?? false}
+            onLinked={health.refetch}
+          />
         </View>
 
-        {view === "actions" ? <ActionsContent /> : <HealthContent health={health} />}
+        {view === "actions" ? (
+          <ActionsContent />
+        ) : (
+          <HealthContent health={health} />
+        )}
       </SafeAreaView>
     </View>
   );
 }
 
-function HealthLinkButton({ linked, onLinked }: { linked: boolean; onLinked: () => void }) {
+function HealthLinkButton({
+  linked,
+  onLinked,
+}: {
+  linked: boolean;
+  onLinked: () => void;
+}) {
   const [linking, setLinking] = useState(false);
 
   const link = async () => {
@@ -67,13 +90,34 @@ function HealthLinkButton({ linked, onLinked }: { linked: boolean; onLinked: () 
       disabled={linking || linked}
       className={`items-end gap-0.5 ${linked ? "" : "active:opacity-70"}`}
     >
-      <View className={`flex-row items-center gap-1.5 rounded-full px-3 py-1.5 ${linked ? "bg-sage/30" : "bg-moss"}`}>
-        {linking ? <ActivityIndicator size="small" color={linked ? colors.ink : colors.surface} /> : null}
-        <Text className={`font-body-medium text-xs ${linked ? "text-ink" : "text-surface"}`}>
-          {linking ? "Linking…" : linked ? "Health Records Linked" : "Link Health Records"}
+      <View
+        className={`flex-row items-center gap-1.5 rounded-full px-3 py-1.5 ${
+          linked ? "bg-sage/30" : "bg-moss"
+        }`}
+      >
+        {linking ? (
+          <ActivityIndicator
+            size="small"
+            color={linked ? colors.ink : colors.surface}
+          />
+        ) : null}
+        <Text
+          className={`font-body-medium text-xs ${
+            linked ? "text-ink" : "text-surface"
+          }`}
+        >
+          {linking
+            ? "Linking…"
+            : linked
+            ? "Health Records Linked"
+            : "Link Health Records"}
         </Text>
       </View>
-      {linked ? <Text className="font-body text-[10px] text-muted">Powered by Finchnode</Text> : null}
+      {linked ? (
+        <Text className="font-body text-[10px] text-muted">
+          Powered by Finchnode
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -93,7 +137,9 @@ function ActionsContent() {
       const updated = await postChallengeProgress(challenge.id);
       actions.setChallenge(updated);
     } catch (err) {
-      setSubmitError(err instanceof ApiError ? err.message : "Couldn't log that — try again");
+      setSubmitError(
+        err instanceof ApiError ? err.message : "Couldn't log that — try again"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -107,19 +153,34 @@ function ActionsContent() {
         onRetry={actions.refetch}
       >
         {actions.data ? (
-          <ScrollView contentContainerClassName="gap-5 px-5 pb-10 pt-2" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerClassName="gap-5 px-5 pb-10 pt-2"
+            showsVerticalScrollIndicator={false}
+          >
             <View className="gap-0.5">
               <Text className="font-display text-lg text-ink">Next swaps</Text>
-              <Text className="font-body text-sm text-muted">From this week's confirmed receipts</Text>
+              <Text className="font-body text-sm text-muted">
+                From this week's confirmed receipts
+              </Text>
             </View>
 
-            {actions.data.hero ? <HeroCard swap={actions.data.hero} /> : <HeroCardEmpty />}
+            {actions.data.hero ? (
+              <HeroCard swap={actions.data.hero} />
+            ) : (
+              <HeroCardEmpty />
+            )}
 
             {actions.data.rest.length > 0 ? (
               <View className="gap-0.5 rounded-card bg-surface px-5 py-2">
-                <Text className="px-0 pb-2 pt-3 font-display text-lg text-ink">More ideas</Text>
+                <Text className="px-0 pb-2 pt-3 font-display text-lg text-ink">
+                  More ideas
+                </Text>
                 {actions.data.rest.map((swap, i) => (
-                  <SwapRow key={swap.id} swap={swap} isLast={i === actions.data!.rest.length - 1} />
+                  <SwapRow
+                    key={swap.id}
+                    swap={swap}
+                    isLast={i === actions.data!.rest.length - 1}
+                  />
                 ))}
               </View>
             ) : null}
@@ -156,8 +217,12 @@ function HeroCard({ swap }: { swap: Swap }) {
         BIGGEST WIN THIS WEEK
       </Text>
       <View>
-        <Text className="font-display text-2xl text-surface">{swap.fromName} →</Text>
-        <Text className="font-display text-2xl text-surface">{swap.toName}</Text>
+        <Text className="font-display text-2xl text-surface">
+          {swap.fromName} →
+        </Text>
+        <Text className="font-display text-2xl text-surface">
+          {swap.toName}
+        </Text>
       </View>
       <Text className="font-body text-base text-surface/90">
         {swap.context}. About {swap.savingKg} kg CO₂e less per week.
@@ -181,7 +246,11 @@ function HeroCardEmpty() {
 
 function SwapRow({ swap, isLast }: { swap: Swap; isLast: boolean }) {
   return (
-    <View className={`flex-row items-center justify-between py-3 ${isLast ? "" : "border-b border-sage/25"}`}>
+    <View
+      className={`flex-row items-center justify-between py-3 ${
+        isLast ? "" : "border-b border-sage/25"
+      }`}
+    >
       <View className="flex-1 pr-3">
         <Text className="font-body-medium text-ink">
           {swap.fromName} → {swap.toName}
@@ -208,20 +277,33 @@ function ChallengeCard({
 }) {
   const pct = Math.min(100, (progress / target) * 100);
   return (
-    <Pressable onPress={onPress} className="gap-2 rounded-card bg-sage/30 px-5 py-5">
-      <Text className="font-body-medium text-xs tracking-widest text-muted">WEEKLY CHALLENGE</Text>
+    <Pressable
+      onPress={onPress}
+      className="gap-2 rounded-card bg-sage/30 px-5 py-5"
+    >
+      <Text className="font-body-medium text-xs tracking-widest text-muted">
+        WEEKLY CHALLENGE
+      </Text>
       <Text className="font-display text-lg text-ink">{title}</Text>
       <Text className="font-body text-sm text-muted">
-        {progress} of {target} done · {daysLeft} day{daysLeft === 1 ? "" : "s"} left · tap to log progress
+        {progress} of {target} done · {daysLeft} day{daysLeft === 1 ? "" : "s"}{" "}
+        left · tap to log progress
       </Text>
       <View className="h-2 w-full overflow-hidden rounded-full bg-surface/60">
-        <View className="h-full rounded-full bg-moss" style={{ width: `${pct}%` }} />
+        <View
+          className="h-full rounded-full bg-moss"
+          style={{ width: `${pct}%` }}
+        />
       </View>
     </Pressable>
   );
 }
 
-function HealthContent({ health }: { health: ReturnType<typeof useHealthData> }) {
+function HealthContent({
+  health,
+}: {
+  health: ReturnType<typeof useHealthData>;
+}) {
   return (
     <ScreenState
       loading={health.status === "loading"}
@@ -229,36 +311,56 @@ function HealthContent({ health }: { health: ReturnType<typeof useHealthData> })
       onRetry={health.refetch}
     >
       {health.data ? (
-        <ScrollView contentContainerClassName="gap-5 px-5 pb-10 pt-2" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerClassName="gap-5 px-5 pb-10 pt-2"
+          showsVerticalScrollIndicator={false}
+        >
+          <HealthRecommendations
+            dietFlags={health.data.dietFlags}
+            allergyAlerts={health.data.allergyAlerts}
+            recommendations={health.data.recommendations}
+          />
+
           <View className="gap-0.5">
-            <Text className="font-display text-lg text-ink">This week's macros</Text>
-            <Text className="font-body text-sm text-muted">From this week's confirmed receipts</Text>
+            <Text className="font-display text-lg text-ink">
+              This week's macros
+            </Text>
+            <Text className="font-body text-sm text-muted">
+              From this week's confirmed receipts
+            </Text>
           </View>
 
           <View className="gap-3">
             <View className="flex-row gap-3">
-              <Tile label="Calories" value={`${health.data.macros.totalKcal}`} />
-              <Tile label="Protein, g" value={`${health.data.macros.totalProteinG}`} />
+              <Tile
+                label="Calories"
+                value={`${health.data.macros.totalKcal}`}
+              />
+              <Tile
+                label="Protein, g"
+                value={`${health.data.macros.totalProteinG}`}
+              />
             </View>
             <View className="flex-row gap-3">
-              <Tile label="Carbs, g" value={`${health.data.macros.totalCarbsG}`} />
+              <Tile
+                label="Carbs, g"
+                value={`${health.data.macros.totalCarbsG}`}
+              />
               <Tile label="Fat, g" value={`${health.data.macros.totalFatG}`} />
             </View>
           </View>
 
           <View className="gap-4 rounded-card bg-surface px-5 py-5">
             <View className="gap-0.5">
-              <Text className="font-display text-lg text-ink">Where it comes from</Text>
-              <Text className="font-body text-xs text-muted">Share of calories, by category</Text>
+              <Text className="font-display text-lg text-ink">
+                Where it comes from
+              </Text>
+              <Text className="font-body text-xs text-muted">
+                Share of calories, by category
+              </Text>
             </View>
             <MacroBars groups={health.data.macros.byGroup} />
           </View>
-
-          <HealthRecommendations
-            dietFlags={health.data.dietFlags}
-            allergyAlerts={health.data.allergyAlerts}
-            recommendations={health.data.recommendations}
-          />
         </ScrollView>
       ) : null}
     </ScreenState>

@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
 
 import { ScreenState } from "@/components/ScreenState";
 import { Tile } from "@/components/Tile";
 import { useProfileData } from "@/features/profile/useProfileData";
 import { pluralize } from "@/lib/plural";
+import { revealEntrance } from "@/lib/motion";
 
 function Row({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
   return (
@@ -16,12 +18,12 @@ function Row({ label, value, isLast }: { label: string; value: string; isLast?: 
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, index, children }: { title: string; index: number; children: ReactNode }) {
   return (
-    <View className="gap-1">
+    <Animated.View entering={revealEntrance(index)} className="gap-1">
       <Text className="font-body-medium text-xs tracking-widest text-muted">{title}</Text>
       <View className="rounded-card bg-surface px-5">{children}</View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -51,7 +53,7 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
       <ScrollView contentContainerClassName="gap-5 px-5 pb-10 pt-4" showsVerticalScrollIndicator={false}>
-        <View className="flex-row items-center gap-4">
+        <Animated.View entering={revealEntrance(0)} className="flex-row items-center gap-4">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-moss">
             <Text className="font-display text-lg text-surface">{profile.initials}</Text>
           </View>
@@ -59,15 +61,15 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
             <Text className="font-display text-xl text-ink">{profile.name}</Text>
             <Text className="font-body text-sm text-muted">Scanning since {scanningSince}</Text>
           </View>
-        </View>
+        </Animated.View>
 
-        <View className="flex-row gap-3">
+        <Animated.View entering={revealEntrance(1)} className="flex-row gap-3">
           <Tile label="Current streak" value={String(profile.streak.current)} />
           <Tile label="Best streak" value={String(profile.streak.best)} />
           <Tile label="Baseline, kg" value={profile.streak.baselineKg.toFixed(1)} />
-        </View>
+        </Animated.View>
 
-        <Section title="STREAK RULES">
+        <Section title="STREAK RULES" index={2}>
           <Row label="Baseline" value={`Lowest week · ${profile.streak.baselineKg.toFixed(1)} kg`} />
           <Row label="Streak limit" value="Baseline + 10%" />
           <Row
@@ -77,7 +79,7 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
           />
         </Section>
 
-        <Section title="OFFSETS">
+        <Section title="OFFSETS" index={3}>
           <Row label="Provider" value="GreenGro Offsets" />
           <Row
             label="Total offset"
@@ -86,7 +88,7 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
           <Row label="Service fee" value="5% of each offset" isLast />
         </Section>
 
-        <Section title="RECEIPTS">
+        <Section title="RECEIPTS" index={4}>
           <Row label="Scan by" value="Camera, email forward" />
           <Row label="Stores seen" value={storesSeen || "None yet"} isLast />
         </Section>

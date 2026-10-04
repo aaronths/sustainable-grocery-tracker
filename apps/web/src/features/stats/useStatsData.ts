@@ -6,15 +6,57 @@ import { getCategoryStats, getWeeks } from "@/api/resources";
 import type { CategoryStat, Week } from "@/api/types";
 import { round1 } from "@/lib/scoring";
 
+export type MonthBucket = {
+  key: string;
+  label: string;
+  totalKg: number;
+};
+
+export type MonthlyStats = {
+  months: MonthBucket[];
+  bestMonthKg: number;
+  avgPerMonthKg: number;
+  vsFirstMonthPct: number;
+};
+
 export type StatsData = {
   weeksOldestFirst: Week[];
   bestWeekKg: number;
   avg12wkKg: number;
   vsFirstWeekPct: number;
   categories: Array<{ group: CategoryStat["group"]; avgKgCo2e: number; pct: number }>;
+  monthly: MonthlyStats;
 };
 
 type Status = "loading" | "error" | "ready";
+
+function deriveMonthly(weeksOldestFirst: Week[]): MonthlyStats {
+  const byMonth = new Map<string, MonthBucket>();
+  for (const week of weeksOldestFirst) {
+    const date = new Date(`${week.startDate}T00:00:00`);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const existing = byMonth.get(key);
+    if (existing) {
+      existing.totalKg = round1(existing.totalKg + week.totalKg);
+    } else {
+      byMonth.set(key, {
+        key,
+        label: date.toLocaleDateString("en-US", { month: "short" }),
+        totalKg: week.totalKg,
+      });
+    }
+  }
+
+  const months = [...byMonth.values()];
+  const totals = months.map((m) => m.totalKg);
+  const bestMonthKg = Math.min(...totals);
+  const avgPerMonthKg = round1(totals.reduce((sum, t) => sum + t, 0) / totals.length);
+  const first = months[0];
+  const last = months[months.length - 1];
+  const vsFirstMonthPct = round1(((last.totalKg - first.totalKg) / first.totalKg) * 100);
+
+  return { months, bestMonthKg, avgPerMonthKg, vsFirstMonthPct };
+}
 
 function deriveStatsData(weeksNewestFirst: Week[], categoryStats: CategoryStat[]): StatsData {
   const weeksOldestFirst = [...weeksNewestFirst].reverse();
@@ -30,7 +72,14 @@ function deriveStatsData(weeksNewestFirst: Week[], categoryStats: CategoryStat[]
     .sort((a, b) => b.avgKgCo2e - a.avgKgCo2e)
     .map((c) => ({ group: c.group, avgKgCo2e: c.avgKgCo2e, pct: Math.round((c.avgKgCo2e / sumAvg) * 100) }));
 
-  return { weeksOldestFirst, bestWeekKg, avg12wkKg, vsFirstWeekPct, categories };
+  return {
+    weeksOldestFirst,
+    bestWeekKg,
+    avg12wkKg,
+    vsFirstWeekPct,
+    categories,
+    monthly: deriveMonthly(weeksOldestFirst),
+  };
 }
 
 export function useStatsData() {

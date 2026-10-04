@@ -85,16 +85,41 @@ export function StatusCard(props: StatusCardProps) {
 
       <Pressable
         onPress={onScanPress}
+        style={({ pressed }) => [
+          status === "over"
+            ? null
+            : {
+                shadowColor: colors.moss,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.25,
+                shadowRadius: 12,
+                elevation: 6,
+              },
+          { transform: [{ scale: pressed ? 0.98 : 1 }] },
+        ]}
         className={
           status === "over"
-            ? "min-h-[44px] flex-row items-center justify-center gap-2 rounded-btn border border-moss px-5 py-3"
-            : "min-h-[44px] flex-row items-center justify-center gap-2 rounded-btn bg-moss px-5 py-3"
+            ? "min-h-[64px] flex-row items-center gap-3 rounded-btn border border-moss px-5 py-3"
+            : "min-h-[64px] flex-row items-center gap-3 rounded-btn bg-moss px-5 py-3"
         }
       >
-        <Camera size={18} color={status === "over" ? colors.moss : colors.surface} />
-        <Text className={status === "over" ? "font-body-medium text-moss" : "font-body-medium text-surface"}>
-          Scan a receipt
-        </Text>
+        <View
+          className={
+            status === "over"
+              ? "h-11 w-11 items-center justify-center rounded-full bg-moss/10"
+              : "h-11 w-11 items-center justify-center rounded-full bg-surface/15"
+          }
+        >
+          <Camera size={22} color={status === "over" ? colors.moss : colors.surface} />
+        </View>
+        <View className="flex-1">
+          <Text className={status === "over" ? "font-body-medium text-base text-moss" : "font-body-medium text-base text-surface"}>
+            Scan a receipt
+          </Text>
+          <Text className={status === "over" ? "font-body text-xs text-moss/70" : "font-body text-xs text-surface/80"}>
+            Takes about 10 seconds
+          </Text>
+        </View>
       </Pressable>
 
       <Pressable

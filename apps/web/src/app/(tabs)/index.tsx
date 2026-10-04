@@ -1,24 +1,24 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "expo-router";
-import { Leaf } from "lucide-react-native";
+import { Leaf, TriangleAlert } from "lucide-react-native";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
 
 import type { WeekOutcome, WeekStatus } from "@/api/types";
 import { BigNumber } from "@/components/BigNumber";
 import { Meter } from "@/components/Meter";
 import { OffsetSheet } from "@/components/OffsetSheet";
 import { PastWeekCard } from "@/components/PastWeekCard";
-import { ReceiptsSheet } from "@/components/ReceiptsSheet";
 import { ScreenState } from "@/components/ScreenState";
 import { Forest, Plains, Smog } from "@/components/Scene";
 import { StatusCard } from "@/components/StatusCard";
 import { StatusPill } from "@/components/StatusPill";
 import { WeekNavPill } from "@/components/WeekNavPill";
 import { colors } from "@/lib/colors";
+import { revealEntrance } from "@/lib/motion";
 import { useHomeData } from "@/features/home/useHomeData";
 import { useWeekHistory } from "@/features/home/useWeekHistory";
-import { useReceiptsData } from "@/features/receipts/useReceiptsData";
 
 const SCENE = { below: Forest, within: Plains, over: Smog };
 
@@ -51,7 +51,14 @@ export default function HomeScreen() {
         error={home.status === "error" ? home.error : null}
         onRetry={home.refetch}
       >
-        {home.data ? <HomeContent data={home.data} home={home} onScan={() => router.push("/scan")} /> : null}
+        {home.data ? (
+          <HomeContent
+            data={home.data}
+            home={home}
+            onScan={() => router.push("/scan")}
+            onViewReceipts={() => router.push("/receipts")}
+          />
+        ) : null}
       </ScreenState>
     </View>
   );
@@ -61,14 +68,14 @@ function HomeContent({
   data,
   home,
   onScan,
+  onViewReceipts,
 }: {
   data: NonNullable<ReturnType<typeof useHomeData>["data"]>;
   home: ReturnType<typeof useHomeData>;
   onScan: () => void;
+  onViewReceipts: () => void;
 }) {
   const { dashboard, quote, quoteError, offsetPurchased } = data;
-  const [receiptsOpen, setReceiptsOpen] = useState(false);
-  const receipts = useReceiptsData(receiptsOpen, home.refetch);
 
   const history = useWeekHistory();
   const [weeksBack, setWeeksBack] = useState(0);
@@ -102,8 +109,6 @@ function HomeContent({
   }, [weeksBack, dashboard, history.weeks]);
 
   const Scene = SCENE[viewed.status];
-  const streakLabel =
-    dashboard.status === "over" ? `${dashboard.streak} weeks · at risk` : `${dashboard.streak}-week streak`;
   const weekSubline = viewed.isCurrent
     ? dashboard.daysLeft === 0
       ? "Week closed Sunday"
@@ -115,7 +120,7 @@ function HomeContent({
       <Scene />
       <SafeAreaView edges={["top"]} className="flex-1">
         <ScrollView contentContainerClassName="gap-5 px-5 pb-10 pt-4" showsVerticalScrollIndicator={false}>
-          <View className="flex-row items-start justify-between">
+          <Animated.View entering={revealEntrance(0)} className="flex-row items-start justify-between">
             <WeekNavPill
               label={`Week of ${formatWeekOf(viewed.startDate)}`}
               sublabel={weekSubline}
@@ -125,14 +130,22 @@ function HomeContent({
               onNext={() => setWeeksBack((w) => Math.max(0, w - 1))}
             />
             {viewed.isCurrent ? (
-              <View className="flex-row items-center gap-1.5 rounded-full bg-surface/80 px-4 py-2.5">
-                <Leaf size={14} color={colors.leaf} />
-                <Text className="font-body-medium text-sm text-ink">{streakLabel}</Text>
+              <View className="items-end gap-1.5">
+                <View className="flex-row items-center gap-1.5 rounded-full bg-surface/80 px-4 py-2.5">
+                  <Leaf size={14} color={colors.leaf} />
+                  <Text className="font-body-medium text-sm text-ink">{dashboard.streak}-week streak</Text>
+                </View>
+                {dashboard.status === "over" ? (
+                  <View className="flex-row items-center gap-1 rounded-full bg-ember/10 px-3 py-1">
+                    <TriangleAlert size={12} color={colors.ember} />
+                    <Text className="font-body-medium text-xs text-ember">At risk</Text>
+                  </View>
+                ) : null}
               </View>
             ) : null}
-          </View>
+          </Animated.View>
 
-          <View className="items-center gap-1 py-6">
+          <Animated.View entering={revealEntrance(1)} className="items-center gap-1 py-6">
             <Text className="font-body-medium text-xs tracking-widest text-muted">
               GROCERY EMISSIONS
             </Text>
@@ -143,34 +156,38 @@ function HomeContent({
             <View className="mt-2">
               <StatusPill status={viewed.status} />
             </View>
-          </View>
+          </Animated.View>
 
-          <Meter status={viewed.status} total={viewed.total} baseline={viewed.baseline} limit={viewed.limit} />
+          <Animated.View entering={revealEntrance(2)}>
+            <Meter status={viewed.status} total={viewed.total} baseline={viewed.baseline} limit={viewed.limit} />
+          </Animated.View>
 
-          {viewed.isCurrent ? (
-            <StatusCard
-              status={dashboard.status}
-              total={dashboard.total}
-              baseline={dashboard.baseline}
-              headroomKg={dashboard.headroomKg}
-              excessKg={dashboard.excessKg}
-              daysLeft={dashboard.daysLeft}
-              streak={dashboard.streak}
-              quote={quote}
-              quoteError={quoteError}
-              offsetPurchased={offsetPurchased}
-              onScanPress={onScan}
-              onOffsetPress={home.openSheet}
-              onViewReceiptsPress={() => setReceiptsOpen(true)}
-            />
-          ) : (
-            <PastWeekCard
-              outcome={viewed.outcome!}
-              total={viewed.total}
-              baseline={viewed.baseline}
-              limit={viewed.limit}
-            />
-          )}
+          <Animated.View entering={revealEntrance(3)}>
+            {viewed.isCurrent ? (
+              <StatusCard
+                status={dashboard.status}
+                total={dashboard.total}
+                baseline={dashboard.baseline}
+                headroomKg={dashboard.headroomKg}
+                excessKg={dashboard.excessKg}
+                daysLeft={dashboard.daysLeft}
+                streak={dashboard.streak}
+                quote={quote}
+                quoteError={quoteError}
+                offsetPurchased={offsetPurchased}
+                onScanPress={onScan}
+                onOffsetPress={home.openSheet}
+                onViewReceiptsPress={onViewReceipts}
+              />
+            ) : (
+              <PastWeekCard
+                outcome={viewed.outcome!}
+                total={viewed.total}
+                baseline={viewed.baseline}
+                limit={viewed.limit}
+              />
+            )}
+          </Animated.View>
         </ScrollView>
       </SafeAreaView>
 
@@ -184,17 +201,6 @@ function HomeContent({
         confirming={home.confirming}
         onConfirm={home.purchaseOffset}
         onRefreshQuote={home.refreshQuote}
-      />
-
-      <ReceiptsSheet
-        visible={receiptsOpen}
-        onClose={() => setReceiptsOpen(false)}
-        receipts={receipts.receipts}
-        loading={receipts.status === "loading"}
-        error={receipts.status === "error" ? receipts.error : null}
-        deletingId={receipts.deletingId}
-        onRetry={receipts.refetch}
-        onDelete={receipts.remove}
       />
     </>
   );

@@ -49,11 +49,21 @@ export function TabBar({ state, descriptors, navigation }: TabBarProps) {
             className="min-h-[44px] flex-1 items-center justify-start gap-1"
           >
             {isHome ? (
-              <View className="-mt-7 h-16 w-16 items-center justify-center rounded-full bg-moss">
+              <View
+                className={`-mt-7 h-16 w-16 items-center justify-center rounded-full bg-moss ${
+                  isFocused ? "border-[3px] border-surface" : ""
+                }`}
+              >
                 <Icon size={24} color={colors.surface} />
               </View>
             ) : (
-              <Icon size={22} color={isFocused ? colors.moss : colors.muted} />
+              <View
+                className={`h-10 w-10 items-center justify-center rounded-full ${
+                  isFocused ? "bg-ink/10" : ""
+                }`}
+              >
+                <Icon size={22} color={isFocused ? colors.moss : colors.muted} />
+              </View>
             )}
             <Text className={isFocused ? "font-body-medium text-moss" : "font-body text-muted"}>
               {label}

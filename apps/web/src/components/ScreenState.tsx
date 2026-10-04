@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useFocusEffect } from "expo-router";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import Animated, { Easing, FadeIn } from "react-native-reanimated";
 
 import { colors } from "@/lib/colors";
+
+const SCREEN_ENTERING = FadeIn.duration(450).easing(Easing.out(Easing.ease));
 
 type ScreenStateProps = {
   loading: boolean;
@@ -20,6 +24,24 @@ export function ScreenState({
   emptyMessage,
   children,
 }: ScreenStateProps) {
+  const [revealKey, setRevealKey] = useState(0);
+  const hasFocusedOnce = useRef(false);
+
+  // Tab screens stay mounted after their first visit, so without this,
+  // entrance animations would only ever play once. Bumping the key forces
+  // the content below to remount (and replay `entering`) on every return
+  // to this tab — but not on the very first mount, which already animates
+  // in naturally and would otherwise double-play.
+  useFocusEffect(
+    useCallback(() => {
+      if (hasFocusedOnce.current) {
+        setRevealKey((key) => key + 1);
+      } else {
+        hasFocusedOnce.current = true;
+      }
+    }, []),
+  );
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-mist">
@@ -52,5 +74,9 @@ export function ScreenState({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <Animated.View key={revealKey} entering={SCREEN_ENTERING} style={{ flex: 1 }}>
+      {children}
+    </Animated.View>
+  );
 }

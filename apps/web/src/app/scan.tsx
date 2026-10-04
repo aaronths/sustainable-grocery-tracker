@@ -3,14 +3,17 @@ import { useRouter } from "expo-router";
 import { AlertCircle, ArrowLeft, Camera, Check, Image as ImageIcon } from "lucide-react-native";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { Easing, FadeIn } from "react-native-reanimated";
 
 import { getCategories } from "@/api/resources";
 import type { Category, LineItem, Receipt } from "@/api/types";
 import { CategoryPickerSheet } from "@/components/CategoryPickerSheet";
 import { useScanFlow } from "@/features/scan/useScanFlow";
 import { colors } from "@/lib/colors";
+import { revealEntrance } from "@/lib/motion";
 
 const LOW_CONFIDENCE_THRESHOLD = 0.7;
+const SCREEN_ENTERING = FadeIn.duration(450).easing(Easing.out(Easing.ease));
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -30,7 +33,7 @@ export default function ScanScreen() {
   };
 
   return (
-    <View className="flex-1 bg-mist">
+    <Animated.View entering={SCREEN_ENTERING} className="flex-1 bg-mist">
       <SafeAreaView edges={["top", "bottom"]} className="flex-1">
         <View className="flex-row items-center justify-between px-5 py-3">
           <Pressable
@@ -73,30 +76,36 @@ export default function ScanScreen() {
           if (pickerItemId) flow.correctItem(pickerItemId, categoryId);
         }}
       />
-    </View>
+    </Animated.View>
   );
 }
 
 function PickView({ onTakePhoto, onPickLibrary }: { onTakePhoto: () => void; onPickLibrary: () => void }) {
   return (
     <View className="flex-1 items-center justify-center gap-4 px-6">
-      <Text className="text-center font-body text-base text-muted">
-        Take a photo of a receipt, or choose one from your library.
-      </Text>
-      <Pressable
-        onPress={onTakePhoto}
-        className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-btn bg-moss px-5 py-3"
-      >
-        <Camera size={18} color={colors.surface} />
-        <Text className="font-body-medium text-surface">Take photo</Text>
-      </Pressable>
-      <Pressable
-        onPress={onPickLibrary}
-        className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-btn border border-moss px-5 py-3"
-      >
-        <ImageIcon size={18} color={colors.moss} />
-        <Text className="font-body-medium text-moss">Choose from library</Text>
-      </Pressable>
+      <Animated.View entering={revealEntrance(0)}>
+        <Text className="text-center font-body text-base text-muted">
+          Take a photo of a receipt, or choose one from your library.
+        </Text>
+      </Animated.View>
+      <Animated.View entering={revealEntrance(1)} className="w-full">
+        <Pressable
+          onPress={onTakePhoto}
+          className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-btn bg-moss px-5 py-3"
+        >
+          <Camera size={18} color={colors.surface} />
+          <Text className="font-body-medium text-surface">Take photo</Text>
+        </Pressable>
+      </Animated.View>
+      <Animated.View entering={revealEntrance(2)} className="w-full">
+        <Pressable
+          onPress={onPickLibrary}
+          className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-btn border border-moss px-5 py-3"
+        >
+          <ImageIcon size={18} color={colors.moss} />
+          <Text className="font-body-medium text-moss">Choose from library</Text>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -142,14 +151,21 @@ function ReviewView({
   return (
     <View className="flex-1">
       <ScrollView contentContainerClassName="gap-3 px-5 pb-4" showsVerticalScrollIndicator={false}>
-        <Text className="font-body text-sm text-muted">{receipt.store}</Text>
-        {receipt.items.map((item) => (
-          <LineItemRow key={item.id} item={item} categoryLabel={categoryLabel} onCorrect={() => onCorrect(item.id)} />
+        <Animated.View entering={revealEntrance(0)}>
+          <Text className="font-body text-sm text-muted">{receipt.store}</Text>
+        </Animated.View>
+        {receipt.items.map((item, i) => (
+          <Animated.View key={item.id} entering={revealEntrance(i + 1)}>
+            <LineItemRow item={item} categoryLabel={categoryLabel} onCorrect={() => onCorrect(item.id)} />
+          </Animated.View>
         ))}
-        <View className="mt-2 flex-row justify-between rounded-tile bg-surface px-4 py-3">
+        <Animated.View
+          entering={revealEntrance(receipt.items.length + 1)}
+          className="mt-2 flex-row justify-between rounded-tile bg-surface px-4 py-3"
+        >
           <Text className="font-body-medium text-ink">Total</Text>
           <Text className="font-body-medium text-ink">{total} kg CO₂e</Text>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <View className="px-5 pb-2 pt-3">

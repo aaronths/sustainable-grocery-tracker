@@ -1,18 +1,19 @@
 import { useState } from "react";
-import { Info } from "lucide-react-native";
+import { Info, Leaf } from "lucide-react-native";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
 
 import { ScreenState } from "@/components/ScreenState";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { useLeaguesData } from "@/features/leagues/useLeaguesData";
 import { colors } from "@/lib/colors";
+import { revealEntrance } from "@/lib/motion";
 import type { League, LeagueKind, LeagueMember } from "@/api/types";
 
 const TAB_OPTIONS: { value: LeagueKind; label: string }[] = [
   { value: "friends", label: "Friends" },
   { value: "campus", label: "Campus" },
-  { value: "global", label: "Global" },
 ];
 
 export default function LeaguesScreen() {
@@ -28,9 +29,20 @@ export default function LeaguesScreen() {
       >
         {leagues.data ? (
           <SafeAreaView edges={["top"]} className="flex-1">
-            <ScrollView contentContainerClassName="gap-5 px-5 pb-10 pt-4" showsVerticalScrollIndicator={false}>
-              <Text className="font-display text-2xl text-ink">Leagues</Text>
-              <SegmentedControl options={TAB_OPTIONS} value={kind} onChange={setKind} />
+            <ScrollView
+              contentContainerClassName="gap-5 px-5 pb-10 pt-4"
+              showsVerticalScrollIndicator={false}
+            >
+              <Animated.View entering={revealEntrance(0)}>
+                <Text className="font-display text-2xl text-ink">Leagues</Text>
+              </Animated.View>
+              <Animated.View entering={revealEntrance(1)}>
+                <SegmentedControl
+                  options={TAB_OPTIONS}
+                  value={kind}
+                  onChange={setKind}
+                />
+              </Animated.View>
 
               <LeagueContent
                 league={leagues.data.leaguesByKind[kind]}
@@ -60,29 +72,41 @@ function LeagueContent({
   if (!league) {
     return (
       <View className="rounded-card bg-surface px-5 py-8">
-        <Text className="text-center font-body text-muted">No leagues yet in this category.</Text>
+        <Text className="text-center font-body text-muted">
+          Invite members of your workplace or education institution to join
+          GreenGro!
+        </Text>
       </View>
     );
   }
 
   return (
     <>
-      <View className="gap-0.5">
+      <Animated.View entering={revealEntrance(2)} className="gap-0.5">
         <Text className="font-display text-lg text-ink">{league.name}</Text>
         <Text className="font-body text-sm text-muted">
-          {league.members.length} members · resets in {daysLeft === 0 ? "today" : `${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
+          {league.members.length} members · resets in{" "}
+          {daysLeft === 0
+            ? "today"
+            : `${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
         </Text>
-      </View>
+      </Animated.View>
 
-      <View className="flex-row items-start gap-2.5 rounded-card bg-sage/25 px-4 py-4">
+      <Animated.View
+        entering={revealEntrance(3)}
+        className="flex-row items-start gap-2.5 rounded-card bg-sage/25 px-4 py-4"
+      >
         <Info size={18} color={colors.ink} />
         <Text className="flex-1 font-body text-sm text-ink">
-          Ranked by how far below your own baseline you finish, not raw totals, so every diet
-          competes fairly.
+          Ranked by how far below your own baseline you finish, not raw totals,
+          so every diet competes fairly.
         </Text>
-      </View>
+      </Animated.View>
 
-      <View className="rounded-card bg-surface px-3 py-2">
+      <Animated.View
+        entering={revealEntrance(4)}
+        className="rounded-card bg-surface px-3 py-2"
+      >
         {league.members.map((member, index) => (
           <MemberRow
             key={member.userId}
@@ -92,14 +116,16 @@ function LeagueContent({
             isLast={index === league.members.length - 1}
           />
         ))}
-      </View>
+      </Animated.View>
 
-      <Pressable
-        onPress={() => onInvite(league)}
-        className="min-h-[44px] items-center justify-center rounded-btn border border-moss px-5 py-3"
-      >
-        <Text className="font-body-medium text-moss">Invite friends</Text>
-      </Pressable>
+      <Animated.View entering={revealEntrance(5)}>
+        <Pressable
+          onPress={() => onInvite(league)}
+          className="min-h-[44px] items-center justify-center rounded-btn border border-moss px-5 py-3"
+        >
+          <Text className="font-body-medium text-moss">Invite friends</Text>
+        </Pressable>
+      </Animated.View>
     </>
   );
 }
@@ -115,25 +141,43 @@ function MemberRow({
   isSelf: boolean;
   isLast: boolean;
 }) {
-  const pctColor = member.pctVsBaseline < 0 ? "text-leaf" : member.pctVsBaseline > 0 ? "text-ember" : "text-ink";
+  const pctColor =
+    member.pctVsBaseline < 0
+      ? "text-leaf"
+      : member.pctVsBaseline > 0
+      ? "text-ember"
+      : "text-ink";
 
   return (
     <View
-      className={`flex-row items-center gap-3 px-2 py-3 ${isLast ? "" : "border-b border-sage/20"} ${
-        isSelf ? "rounded-tile bg-sage/20" : ""
-      }`}
+      className={`flex-row items-center gap-3 px-2 py-3 ${
+        isLast ? "" : "border-b border-sage/20"
+      } ${isSelf ? "rounded-tile bg-sage/20" : ""}`}
     >
       <Text className="w-4 font-body-medium text-muted">{rank}</Text>
       <View
-        className={`h-10 w-10 items-center justify-center rounded-full ${isSelf ? "bg-moss" : "bg-sage/50"}`}
+        className={`h-10 w-10 items-center justify-center rounded-full ${
+          isSelf ? "bg-moss" : "bg-sage/50"
+        }`}
       >
-        <Text className={`font-body-medium text-sm ${isSelf ? "text-surface" : "text-ink"}`}>
+        <Text
+          className={`font-body-medium text-sm ${
+            isSelf ? "text-surface" : "text-ink"
+          }`}
+        >
           {member.initials}
         </Text>
       </View>
       <View className="flex-1">
-        <Text className="font-body-medium text-ink">{isSelf ? "You" : member.name}</Text>
-        <Text className="font-body text-sm text-muted">{member.streak}-week streak</Text>
+        <View className="flex-row items-center gap-3">
+          <Text className="font-body-medium text-ink">
+            {isSelf ? "You" : member.name}
+          </Text>
+          <View className="flex-row items-center gap-0.5">
+            <Leaf size={14} strokeWidth={3} color={colors.leaf} />
+            <Text className="font-bold text-md text-leaf">{member.streak}</Text>
+          </View>
+        </View>
       </View>
       <Text className={`font-body-medium ${pctColor}`}>
         {member.pctVsBaseline > 0 ? "+" : ""}

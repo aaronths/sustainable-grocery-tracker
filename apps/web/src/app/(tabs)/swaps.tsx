@@ -1,8 +1,10 @@
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
 
 import { ScreenState } from "@/components/ScreenState";
 import { useSwapsData } from "@/features/swaps/useSwapsData";
+import { revealEntrance } from "@/lib/motion";
 import type { Swap } from "@/api/types";
 
 export default function SwapsScreen() {
@@ -18,17 +20,19 @@ export default function SwapsScreen() {
         {swaps.data ? (
           <SafeAreaView edges={["top"]} className="flex-1">
             <ScrollView contentContainerClassName="gap-5 px-5 pb-10 pt-4" showsVerticalScrollIndicator={false}>
-              <View className="gap-0.5">
+              <Animated.View entering={revealEntrance(0)} className="gap-0.5">
                 <Text className="font-display text-2xl text-ink">Next swaps</Text>
                 <Text className="font-body text-sm text-muted">From your last 3 receipts</Text>
-              </View>
+              </Animated.View>
 
               {swaps.data.hero ? (
-                <HeroCard swap={swaps.data.hero} onCommit={() => swaps.commit(swaps.data!.hero!.id)} />
+                <Animated.View entering={revealEntrance(1)}>
+                  <HeroCard swap={swaps.data.hero} onCommit={() => swaps.commit(swaps.data!.hero!.id)} />
+                </Animated.View>
               ) : null}
 
               {swaps.data.rest.length > 0 ? (
-                <View className="gap-0.5 rounded-card bg-surface px-5 py-2">
+                <Animated.View entering={revealEntrance(2)} className="gap-0.5 rounded-card bg-surface px-5 py-2">
                   <Text className="px-0 pb-2 pt-3 font-display text-lg text-ink">More ideas</Text>
                   {swaps.data.rest.map((swap, i) => (
                     <SwapRow
@@ -38,16 +42,18 @@ export default function SwapsScreen() {
                       onCommit={() => swaps.commit(swap.id)}
                     />
                   ))}
-                </View>
+                </Animated.View>
               ) : null}
 
               {swaps.data.challenge ? (
-                <ChallengeCard
-                  title={swaps.data.challenge.title}
-                  progress={swaps.data.challenge.progress}
-                  target={swaps.data.challenge.target}
-                  daysLeft={swaps.data.daysLeft}
-                />
+                <Animated.View entering={revealEntrance(3)}>
+                  <ChallengeCard
+                    title={swaps.data.challenge.title}
+                    progress={swaps.data.challenge.progress}
+                    target={swaps.data.challenge.target}
+                    daysLeft={swaps.data.daysLeft}
+                  />
+                </Animated.View>
               ) : null}
             </ScrollView>
           </SafeAreaView>

@@ -10,18 +10,29 @@ export type ScanPhase = "pick" | "uploading" | "processing" | "review" | "confir
 
 const POLL_INTERVAL_MS = 1000;
 
-function buildFormData(asset: ImagePicker.ImagePickerAsset): FormData {
+// Surfaces the real failure reason (network error, timeout, etc.) instead of
+// a generic message, so issues like a bad EXPO_PUBLIC_API_URL or a dropped
+// connection on a flaky network are actually visible instead of swallowed.
+function describeError(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof Error && err.message) return `${fallback}: ${err.message}`;
+  return fallback;
+}
+
+async function buildFormData(asset: ImagePicker.ImagePickerAsset): Promise<FormData> {
   const formData = new FormData();
   if (Platform.OS === "web" && asset.file) {
     formData.append("image", asset.file);
-  } else {
-    // React Native's fetch/FormData polyfill reads the file at `uri` when given
-    // this {uri, name, type} shape — this is not a web File/Blob.
-    formData.append(
-      "image",
-      { uri: asset.uri, name: asset.fileName ?? "receipt.jpg", type: asset.mimeType ?? "image/jpeg" } as unknown as Blob,
-    );
+    return formData;
   }
+  // The old RN FormData shorthand — appending a plain {uri, name, type}
+  // object — throws "Unsupported FormDataPart implementation" on the New
+  // Architecture's networking module. Fetching the local file URI gives a
+  // real Blob, which is what it actually requires now.
+  const response = await fetch(asset.uri);
+  const rawBlob = await response.blob();
+  const blob = new Blob([rawBlob], { type: asset.mimeType ?? "image/jpeg" });
+  formData.append("image", blob, asset.fileName ?? "receipt.jpg");
   return formData;
 }
 
@@ -54,7 +65,7 @@ export function useScanFlow(onConfirmed: () => void) {
           }
         } catch (err) {
           stopPolling();
-          setError(err instanceof ApiError ? err.message : "Lost connection while parsing");
+          setError(describeError(err, "Lost connection while parsing"));
           setPhase("error");
         }
       }, POLL_INTERVAL_MS);
@@ -67,11 +78,12 @@ export function useScanFlow(onConfirmed: () => void) {
       setPhase("uploading");
       setError(null);
       try {
-        const uploaded = await uploadReceipt(buildFormData(asset));
+        const formData = await buildFormData(asset);
+        const uploaded = await uploadReceipt(formData);
         setPhase("processing");
         startPolling(uploaded.id);
       } catch (err) {
-        setError(err instanceof ApiError ? err.message : "Couldn't upload that photo");
+        setError(describeError(err, "Couldn't upload that photo"));
         setPhase("error");
       }
     },
@@ -111,7 +123,7 @@ export function useScanFlow(onConfirmed: () => void) {
         setReceipt(updated);
       } catch (err) {
         setReceipt(previous);
-        setConfirmError(err instanceof ApiError ? err.message : "Couldn't update that item");
+        setConfirmError(describeError(err, "Couldn't update that item"));
       }
     },
     [receipt],
@@ -125,7 +137,7 @@ export function useScanFlow(onConfirmed: () => void) {
       await confirmReceipt(receipt.id);
       onConfirmed();
     } catch (err) {
-      setConfirmError(err instanceof ApiError ? err.message : "Couldn't confirm this receipt");
+      setConfirmError(describeError(err, "Couldn't confirm this receipt"));
       setPhase("review");
     }
   }, [receipt, onConfirmed]);

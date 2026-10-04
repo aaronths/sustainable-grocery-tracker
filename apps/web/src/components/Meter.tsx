@@ -31,12 +31,12 @@ export function Meter({ status, total, baseline, limit }: MeterProps) {
   const legend = exceeded
     ? "Limit exceeded"
     : status === "below"
-      ? `Baseline ${total} kg (was ${baseline}) · Limit ${limit} kg (+10%)`
-      : `Baseline ${baseline} kg · Limit ${limit} kg (+10%)`;
+    ? `Baseline ${total} kg (was ${baseline}) · Limit ${limit} kg (+10%)`
+    : `Baseline ${baseline} kg · Limit ${limit} kg (+10%)`;
 
   return (
     <View
-      className="w-full gap-3 rounded-card bg-surface px-5 py-5"
+      className="w-full gap-3 rounded-card bg-surface px-5 py-3"
       style={{
         shadowColor: colors.ink,
         shadowOffset: { width: 0, height: 4 },
@@ -46,14 +46,19 @@ export function Meter({ status, total, baseline, limit }: MeterProps) {
       }}
     >
       <View className="flex-row items-center justify-between">
-        <Text className="font-body-medium text-sm text-muted">Weekly limit</Text>
+        <Text className="font-body-medium text-sm text-muted">
+          Weekly limit
+        </Text>
         <Text className="font-display text-xl" style={{ color: fillColor }}>
           {Math.round(pct)}%
         </Text>
       </View>
 
       <View className="h-6 w-full overflow-hidden rounded-full bg-sage/25">
-        <View className="h-full rounded-full" style={{ width: `${fillPct}%`, backgroundColor: fillColor }} />
+        <View
+          className="h-full rounded-full"
+          style={{ width: `${fillPct}%`, backgroundColor: fillColor }}
+        />
       </View>
 
       <View className="flex-row items-center gap-1.5">

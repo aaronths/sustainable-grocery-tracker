@@ -187,7 +187,10 @@ export function buildSeed(now: Date = new Date()): StoreState {
 
   const baseline = streak.baselineKg; // 28.4
   const limit = computeLimit(baseline);
-  const openTotal = 33.1;
+  // The open week starts empty: no receipts scanned yet, so no emissions and
+  // no offset purchased for it (an offset is only ever recorded for a week
+  // that already has a total to cover).
+  const openTotal = 0;
 
   const openWeek: Week = {
     id: makeId("week"),
@@ -206,105 +209,9 @@ export function buildSeed(now: Date = new Date()): StoreState {
     .slice(0, -1)
     .map((week, i) => buildClosedWeekReceipt(week, i));
 
-  const openWeekReceipts: Receipt[] = [
-    {
-      id: makeId("rcpt"),
-      weekId: openWeek.id,
-      store: "Kroger",
-      uploadedAt: `${openWeek.startDate}T13:00:00.000Z`,
-      status: "confirmed",
-      items: [
-        makeLineItem({
-          rawText: "80/20 GRND BEEF",
-          name: "Ground beef",
-          categoryId: "beef",
-          massKg: 0.15,
-          confidence: 0.93,
-        }),
-        makeLineItem({
-          rawText: "WHOLE WHEAT BREAD",
-          name: "Bread",
-          categoryId: "bread",
-          massKg: 0.3,
-          confidence: 0.95,
-        }),
-        makeLineItem({
-          rawText: "ORG BANANAS",
-          name: "Bananas",
-          categoryId: "bananas",
-          massKg: 1.1,
-          confidence: 0.62,
-        }),
-      ],
-    },
-    {
-      id: makeId("rcpt"),
-      weekId: openWeek.id,
-      store: "Trader Joe's",
-      uploadedAt: `${openWeek.startDate}T15:00:00.000Z`,
-      status: "confirmed",
-      items: [
-        makeLineItem({
-          rawText: "CHKN BRST BNLS",
-          name: "Chicken breast",
-          categoryId: "chicken",
-          massKg: 0.6,
-          confidence: 0.9,
-        }),
-        makeLineItem({
-          rawText: "SHARP CHEDDAR",
-          name: "Cheese",
-          categoryId: "cheese",
-          massKg: 0.4,
-          confidence: 0.88,
-        }),
-        makeLineItem({
-          rawText: "WHOLE BEAN COFFEE",
-          name: "Coffee",
-          categoryId: "coffee",
-          massKg: 0.22,
-          confidence: 0.68,
-        }),
-      ],
-    },
-    {
-      id: makeId("rcpt"),
-      weekId: openWeek.id,
-      store: "Whole Foods",
-      uploadedAt: `${openWeek.startDate}T17:00:00.000Z`,
-      status: "confirmed",
-      items: [
-        makeLineItem({
-          rawText: "ATL SALMON FILLET",
-          name: "Farmed salmon",
-          categoryId: "salmon",
-          massKg: 0.5,
-          confidence: 0.86,
-        }),
-        makeLineItem({
-          rawText: "JASMINE RICE",
-          name: "Rice",
-          categoryId: "rice",
-          massKg: 1.0,
-          confidence: 0.97,
-        }),
-        makeLineItem({
-          rawText: "LRG EGGS DOZEN",
-          name: "Eggs",
-          categoryId: "eggs",
-          massKg: 0.8,
-          confidence: 0.92,
-        }),
-        makeLineItem({
-          rawText: "WHOLE MILK GAL",
-          name: "Milk",
-          categoryId: "milk",
-          massKg: 1.0,
-          confidence: 0.94,
-        }),
-      ],
-    },
-  ];
+  // No receipts scanned yet for the open week — a fresh server start begins
+  // the current week empty, the way a real user would experience it.
+  const openWeekReceipts: Receipt[] = [];
 
   const receipts = [...closedReceipts, ...openWeekReceipts];
 

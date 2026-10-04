@@ -47,13 +47,13 @@ describe("GET /api/health", () => {
 });
 
 describe("GET /api/dashboard", () => {
-  it("reflects the seeded open week (over limit)", async () => {
+  it("reflects the seeded open week (empty — no receipts scanned yet)", async () => {
     const res = await request(app).get("/api/dashboard");
     expect(res.status).toBe(200);
-    expect(res.body.total).toBe(33.1);
+    expect(res.body.total).toBe(0);
     expect(res.body.baseline).toBe(28.4);
-    expect(res.body.status).toBe("over");
-    expect(res.body.excessKg).toBeGreaterThan(0);
+    expect(res.body.status).toBe("below");
+    expect(res.body.headroomKg).toBeGreaterThan(0);
   });
 });
 
@@ -169,6 +169,9 @@ describe("receipts flow", () => {
 
 describe("GET /api/stats/macros", () => {
   it("sums macros across the open week's confirmed receipts by category group", async () => {
+    // The open week starts with no receipts, so simulate one confirmed
+    // receipt to give this test something to sum.
+    await request(app).post("/api/dev/simulate").send({ status: "within" });
     const res = await request(app).get("/api/stats/macros");
     expect(res.status).toBe(200);
     expect(res.body.byGroup).toHaveLength(5);
@@ -204,10 +207,10 @@ describe("health records linking", () => {
 
 describe("POST /api/dev/reset", () => {
   it("restores the seeded dashboard", async () => {
-    await request(app).post("/api/dev/simulate").send({ status: "below" });
+    await request(app).post("/api/dev/simulate").send({ status: "over" });
     await request(app).post("/api/dev/reset");
     const res = await request(app).get("/api/dashboard");
-    expect(res.body.total).toBe(33.1);
-    expect(res.body.status).toBe("over");
+    expect(res.body.total).toBe(0);
+    expect(res.body.status).toBe("below");
   });
 });

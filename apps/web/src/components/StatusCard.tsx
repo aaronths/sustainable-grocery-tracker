@@ -1,5 +1,9 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { Camera, Receipt as ReceiptIcon, TriangleAlert } from "lucide-react-native";
+import {
+  Camera,
+  Receipt as ReceiptIcon,
+  TriangleAlert,
+} from "lucide-react-native";
 
 import type { OffsetQuote, WeekStatus } from "@/api/types";
 import { colors } from "@/lib/colors";
@@ -29,6 +33,12 @@ function headlineAndBody(props: StatusCardProps): {
     props;
 
   if (status === "below") {
+    if (total === 0) {
+      return {
+        headline: "Log your groceries",
+        body: `Scan your first receipt to start tracking this week. Stay under ${baseline} kg to keep your streak going.`,
+      };
+    }
     const diff = round1(baseline - total);
     return {
       headline: "Your lowest week yet",
@@ -70,7 +80,7 @@ export function StatusCard(props: StatusCardProps) {
   const { headline, body } = headlineAndBody(props);
 
   return (
-    <View className="w-full gap-4 rounded-card bg-surface px-5 py-5">
+    <View className="w-full gap-4 rounded-card bg-surface px-5 pt-5 pb-1">
       <View className="gap-1.5">
         <Text className="font-display text-xl text-ink">{headline}</Text>
         <Text className="font-body text-base text-muted">{body}</Text>
@@ -94,13 +104,18 @@ export function StatusCard(props: StatusCardProps) {
             <TriangleAlert size={22} color={colors.surface} />
           </View>
           <View className="flex-1">
-            <Text className="font-body-medium text-base text-surface">Over limit</Text>
+            <Text className="font-body-medium text-base text-surface">
+              Over limit
+            </Text>
             {quote ? (
               <Text className="font-body text-xs text-surface/85">
-                Offset {quote.kg} kg for ${(quote.totalCents / 100).toFixed(2)} · keep streak
+                Offset {quote.kg} kg for ${(quote.totalCents / 100).toFixed(2)}{" "}
+                · keep streak
               </Text>
             ) : quoteError ? (
-              <Text className="font-body text-xs text-surface/85">Unable to load offset quote</Text>
+              <Text className="font-body text-xs text-surface/85">
+                Unable to load offset quote
+              </Text>
             ) : (
               <ActivityIndicator color={colors.surface} />
             )}
@@ -109,7 +124,7 @@ export function StatusCard(props: StatusCardProps) {
       ) : null}
 
       {status === "over" && offsetPurchased ? (
-        <View className="rounded-btn bg-sage/40 px-5 py-3">
+        <View className="rounded-btn bg-sage/40 px-5 py-2">
           <Text className="font-body-medium text-ink">
             This week's emissions are fully offset — streak secured.
           </Text>
@@ -172,7 +187,7 @@ export function StatusCard(props: StatusCardProps) {
 
       <Pressable
         onPress={onViewReceiptsPress}
-        className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-btn px-5 py-3"
+        className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-btn px-5 py-1"
       >
         <ReceiptIcon size={16} color={colors.muted} />
         <Text className="font-body-medium text-muted">

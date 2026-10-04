@@ -165,7 +165,7 @@ function HomeContent({
           </Text>
           {showStatusPill ? (
             <View className="mt-2">
-              <StatusPill status={viewed.status} />
+              <StatusPill status={viewed.status} isEmpty={viewed.isCurrent && viewed.total === 0} />
             </View>
           ) : null}
         </View>

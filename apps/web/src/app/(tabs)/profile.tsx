@@ -1,19 +1,60 @@
-import type { ReactNode } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { type ReactNode, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
+import { Award, ChevronRight, Flame, Leaf, Sprout } from "lucide-react-native";
 
+import { HowItWorksSheet } from "@/components/HowItWorksSheet";
 import { ScreenState } from "@/components/ScreenState";
 import { Tile } from "@/components/Tile";
 import { useProfileData } from "@/features/profile/useProfileData";
+import { colors } from "@/lib/colors";
 import { pluralize } from "@/lib/plural";
 import { revealEntrance } from "@/lib/motion";
 
 function Row({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
   return (
-    <View className={`flex-row items-center justify-between py-3 ${isLast ? "" : "border-b border-sage/20"}`}>
+    <View className={`flex-row items-start justify-between gap-4 py-3 ${isLast ? "" : "border-b border-sage/20"}`}>
       <Text className="font-body text-ink">{label}</Text>
-      <Text className="font-body-medium text-ink">{value}</Text>
+      <Text className="flex-1 text-right font-body-medium text-ink">{value}</Text>
+    </View>
+  );
+}
+
+function LinkRow({ label, onPress, isLast }: { label: string; onPress: () => void; isLast?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`flex-row items-center justify-between py-3 active:opacity-60 ${isLast ? "" : "border-b border-sage/20"}`}
+    >
+      <Text className="font-body text-ink">{label}</Text>
+      <ChevronRight size={18} color={colors.muted} />
+    </Pressable>
+  );
+}
+
+type Achievement = {
+  icon: typeof Flame;
+  color: string;
+  label: string;
+};
+
+const ACHIEVEMENTS: Achievement[] = [
+  { icon: Flame, color: colors.amber, label: "Long Streak" },
+  { icon: Leaf, color: colors.leaf, label: "First Offset" },
+  { icon: Award, color: colors.orange, label: "Bronze Contributor" },
+  { icon: Sprout, color: colors.moss, label: "GreenGro Founder" },
+];
+
+function AchievementBadge({ icon: Icon, color, label }: Achievement) {
+  return (
+    <View className="w-20 items-center gap-2">
+      <View className="h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
+        <Icon size={24} color={colors.surface} />
+      </View>
+      <Text className="text-center font-body text-xs text-ink" numberOfLines={2}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -49,6 +90,7 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
     month: "long",
     year: "numeric",
   });
+  const [howItWorksVisible, setHowItWorksVisible] = useState(false);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1">
@@ -69,7 +111,20 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
           <Tile label="Baseline, kg" value={profile.streak.baselineKg.toFixed(1)} />
         </Animated.View>
 
-        <Section title="STREAK RULES" index={2}>
+        <Animated.View entering={revealEntrance(2)} className="gap-2">
+          <Text className="font-body-medium text-xs tracking-widest text-muted">ACHIEVEMENTS</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-4"
+          >
+            {ACHIEVEMENTS.map((achievement) => (
+              <AchievementBadge key={achievement.label} {...achievement} />
+            ))}
+          </ScrollView>
+        </Animated.View>
+
+        <Section title="STREAK RULES" index={3}>
           <Row label="Baseline" value={`Lowest week · ${profile.streak.baselineKg.toFixed(1)} kg`} />
           <Row label="Streak limit" value="Baseline + 10%" />
           <Row
@@ -79,7 +134,7 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
           />
         </Section>
 
-        <Section title="OFFSETS" index={3}>
+        <Section title="OFFSETS" index={4}>
           <Row label="Provider" value="GreenGro Offsets" />
           <Row
             label="Total offset"
@@ -88,11 +143,17 @@ function ProfileContent({ data }: { data: NonNullable<ReturnType<typeof useProfi
           <Row label="Service fee" value="5% of each offset" isLast />
         </Section>
 
-        <Section title="RECEIPTS" index={4}>
+        <Section title="RECEIPTS" index={5}>
           <Row label="Scan by" value="Camera, email forward" />
           <Row label="Stores seen" value={storesSeen || "None yet"} isLast />
         </Section>
+
+        <Section title="ABOUT" index={6}>
+          <LinkRow label="How does GreenGro work?" onPress={() => setHowItWorksVisible(true)} isLast />
+        </Section>
       </ScrollView>
+
+      <HowItWorksSheet visible={howItWorksVisible} onClose={() => setHowItWorksVisible(false)} />
     </SafeAreaView>
   );
 }

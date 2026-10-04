@@ -40,7 +40,7 @@ describe("parseReceipt", () => {
     expect(items).toHaveLength(1);
     expect(items[0].categoryId).toBe("avocado");
     expect(items[0].massKg).toBe(0.3);
-    expect(items[0].kgCo2e).toBeCloseTo(0.3 * 2.3, 1); // avocado factor from categories.json
+    expect(items[0].kgCo2e).toBeCloseTo(0.3 * 1.55, 1); // avocado factor from categories.json
     expect(items[0].confidence).toBe(0.82);
     // Macros pass through from Claude's own per-item estimate, not derived from category density.
     expect(items[0].kcal).toBe(480);
@@ -74,7 +74,7 @@ describe("parseReceipt", () => {
     expect(items).toHaveLength(1);
     expect(items[0].massKg).toBe(0.7); // chicken's typicalMassKg from categories.json, not Claude's 5.0
     // Macros/CO2e are recomputed from the corrected mass, not Claude's stale guess.
-    expect(items[0].kgCo2e).toBeCloseTo(0.7 * 6.9, 1);
+    expect(items[0].kgCo2e).toBeCloseTo(0.7 * 5.58, 1);
     expect(items[0].kcal).toBe(Math.round(0.7 * 1650));
     expect(items[0].proteinG).not.toBe(999);
   });

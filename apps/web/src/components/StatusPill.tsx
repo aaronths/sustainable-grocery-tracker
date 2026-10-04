@@ -34,12 +34,12 @@ export function statusPillTone(status: WeekStatus): PillTone {
   return "smog";
 }
 
-export function statusPillLabel(status: WeekStatus): string {
-  if (status === "below") return "New personal low";
+export function statusPillLabel(status: WeekStatus, isEmpty = false): string {
+  if (status === "below") return isEmpty ? "Log your groceries" : "New personal low";
   if (status === "within") return "Within baseline";
   return "Over limit";
 }
 
-export function StatusPill({ status }: { status: WeekStatus }) {
-  return <Pill tone={statusPillTone(status)}>{statusPillLabel(status)}</Pill>;
+export function StatusPill({ status, isEmpty = false }: { status: WeekStatus; isEmpty?: boolean }) {
+  return <Pill tone={statusPillTone(status)}>{statusPillLabel(status, isEmpty)}</Pill>;
 }
